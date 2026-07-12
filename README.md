@@ -15,7 +15,7 @@ OrbitLab targets university students, hobby rocketeers, and early-career profess
 | **Desktop** | macOS + Windows downloadable apps for offline / lab use (same engine as web) |
 | **Community** | Request new calculation modules; maintainers review and ship |
 | **i18n** | TR + EN first; expand toward 8–10 locales |
-| **Ops** | SaaS accounts, entitlements, admin console; deploy web on Netlify; data plane on Cloudflare (D1/R2/Workers) |
+| **Ops** | SaaS accounts, entitlements, admin; web on **Netlify**; data/auth/files on **PocketBase** (self-hosted) |
 
 Inspired by [OpenRocket](https://openrocket.info/) (open-source model rocket simulator). We treat OpenRocket as a **reference for models, UX, and data formats** — not as a drop-in copy. See [docs/LICENSING.md](docs/LICENSING.md).
 
@@ -24,13 +24,14 @@ Inspired by [OpenRocket](https://openrocket.info/) (open-source model rocket sim
 ```
 orbitlab/
 ├── apps/
-│   ├── web/           # Next.js (or similar) — Netlify
-│   └── desktop/       # Tauri/Electron shell (later)
+│   ├── web/           # React app — Netlify
+│   ├── desktop/       # Tauri/Electron shell (later)
+│   └── pocketbase/    # schema export, hooks notes (later)
 ├── packages/
-│   ├── sim-core/      # Physics & numerics (TS first; C/WASM later)
+│   ├── sim-core/      # Physics & numerics modules (TS → WASM)
 │   ├── schema/        # Shared types, rocket model JSON schema
 │   └── report/        # Step-by-step math → PDF/CSV
-├── docs/              # Product, architecture, roadmap
+├── docs/              # Product, architecture, math, roadmap
 └── scripts/
 ```
 
@@ -38,6 +39,7 @@ orbitlab/
 
 - [Product brief](docs/PRODUCT.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [How advanced math works](docs/MATH.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Licensing & OpenRocket](docs/LICENSING.md)
 - [Contributing](CONTRIBUTING.md)
@@ -53,18 +55,18 @@ cd apps/web
 
 This commit ships **documentation + empty package placeholders**. App scaffolding lands in the next PRs.
 
-## Stack (MVP direction)
+## Stack (locked for MVP)
 
 | Concern | Choice |
 |---------|--------|
 | Web UI | TypeScript, React, dark theme, Three.js / R3F |
-| Sim engine | TypeScript core first → optional C/Rust WASM for heavy jobs |
-| Auth + SaaS | Cloudflare Workers + session/JWT; pro entitlements |
-| Database | **Cloudflare D1** (SQL) + **R2** (files, reports, thrust curves) |
-| Hosting | **Netlify** (web) + Cloudflare Workers (API) |
+| Sim / math | **Module pipeline** in `sim-core` (not in the DB) — see [docs/MATH.md](docs/MATH.md) |
+| Auth + DB + files + realtime | **[PocketBase](https://pocketbase.io/)** (SQLite, built-in admin) |
+| PocketBase host | Self-host (Render / Fly / VPS) |
+| Web host | **Netlify** |
 | Desktop later | Tauri preferred (smaller) or Electron |
 
-Supabase is intentionally out of scope for this project (account limits elsewhere).
+Supabase is out of scope (account limits). Cloudflare D1 path deferred in favor of PocketBase.
 
 ## Contributing
 

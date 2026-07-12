@@ -45,12 +45,21 @@ OpenRocket set the bar for desktop model-rocket design. OrbitLab aims for **web-
 
 Payments unlock entitlements on the account; desktop can license against the same account later.
 
+## Platform decisions
+
+| | |
+|--|--|
+| Frontend host | Netlify |
+| Backend / BaaS | **PocketBase** (self-hosted) |
+| Advanced math | Versioned **sim-core modules** + report traces — [MATH.md](./MATH.md) |
+
 ## Non-goals (MVP)
 
 - Full CFD / multiphysics FEA
 - Certified flight approval or range safety automation
 - Live hardware control of motors/igniters (safety)
 - Shipping GPL OpenRocket binaries rebranded as OrbitLab
+- Running differential equations *inside* the database
 
 ## Success metrics (early)
 

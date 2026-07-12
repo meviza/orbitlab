@@ -1,54 +1,73 @@
 # Architecture
 
+**Locked decisions (2026-07-12):**
+
+| Layer | Choice |
+|-------|--------|
+| Web | Netlify (React + dark UI + Three.js / R3F) |
+| BaaS / DB | **PocketBase** (Auth, SQLite, files, realtime, admin UI) |
+| Hosting PocketBase | Self-host (Render / Fly.io / VPS) — single binary |
+| Math / sim | `packages/sim-core` modules (TS → Worker → optional WASM) |
+| Desktop later | Tauri + same sim-core |
+| Not in scope | Supabase, Cloudflare D1 as primary DB |
+
+Deep dive on numerics: [MATH.md](./MATH.md).
+
 ## High-level
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  apps/web (Netlify)                                         │
-│  React + dark UI + Three.js / R3F editor + charts           │
+│  React + dark UI + Three.js editor + charts + report UI     │
 └───────────────────────────┬─────────────────────────────────┘
-                            │ HTTPS
+                            │ HTTPS (JS SDK / REST)
 ┌───────────────────────────▼─────────────────────────────────┐
-│  Cloudflare Workers API                                     │
-│  Auth, projects, entitlements, admin, sensor ingest         │
-└───────┬─────────────────┬─────────────────┬─────────────────┘
-        │                 │                 │
-   ┌────▼────┐      ┌─────▼─────┐     ┌─────▼─────┐
-   │ D1 SQL  │      │ R2 files  │     │ KV/cache  │
-   │ users,  │      │ PDF, CSV, │     │ sessions  │
-   │ designs │      │ logs, ORK │     │ rate lim. │
-   └─────────┘      └───────────┘     └───────────┘
+│  PocketBase (self-hosted)                                   │
+│  Auth · collections (SQL/SQLite) · file storage · realtime  │
+│  Admin UI · API rules (RBAC) · optional hooks               │
+└─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│  packages/sim-core                                          │
-│  Pure physics (browser Worker / WASM) — same core offline   │
+│  packages/sim-core  (runs in browser Worker / desktop)      │
+│  Calculation modules: free + pro · report traces            │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
 │  apps/desktop (later)                                       │
-│  Tauri shell → loads same sim-core + local project files    │
+│  Offline projects; optional login for pro entitlements      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Why this split
+## Why PocketBase (vs the shortlist)
 
-- **Sim in the client (Worker/WASM)** keeps latency low, scales cheaply, and works offline for desktop.
-- **API on Cloudflare** owns identity, billing flags, admin, and **sensor protocol** (must not be trust-the-client).
-- **Netlify** ships the static/SSR web app; teams already use it.
-- **D1 + R2** cover SaaS needs without Supabase: SQL for relational data, object storage for large artifacts.
+| Option | Verdict for OrbitLab |
+|--------|----------------------|
+| **PocketBase** ✅ | Auth + DB + files + realtime + **built-in admin** in one binary. Open source. Cheap to host. Matches SaaS + contributor-friendly stack. |
+| Appwrite | Strong but heavier ops; keep as scale-up option |
+| Nhost | Good Postgres/GraphQL path; more moving parts than we need now |
+| Neon only | Excellent Postgres; still need auth, files, admin API ourselves |
+| Firebase | NoSQL + lock-in; weaker fit for open relational models |
+| Turso | Great edge SQL; no full BaaS (auth/admin DIY) |
+| Cloudflare D1/R2 | Deferred; PocketBase covers the same product needs with less glue |
 
-## Cloudflare vs Supabase (decision)
+**Realtime:** useful later for pro sensor streams and multi-tab project sync. Not required for MVP sim (sim is client-side).
 
-| Need | Supabase | Cloudflare path |
-|------|----------|-----------------|
-| SQL DB | Postgres | **D1** (SQLite edge) |
-| Auth | Built-in | Workers + JWT/session (or Clerk/Auth.js adapter) |
-| Files | Storage | **R2** |
-| Edge functions | Edge Functions | **Workers** |
-| Realtime | Realtime | Durable Objects / Queues (as needed) |
-| Postgres features | Rich | D1 is simpler — good for MVP; migrate later if needed |
+**Math is not in PocketBase.** See [MATH.md](./MATH.md).
 
-**Verdict:** Cloudflare covers our MVP SaaS surface (users, designs, plans, files, API). It is **not** a 1:1 Postgres clone (no heavy PostGIS, limited complex joins at huge scale), which is fine for OrbitLab phase 1–2.
+## PocketBase collections (draft)
+
+| Collection | Purpose |
+|------------|---------|
+| `users` | Built-in auth; profile fields: `plan`, `edu_verified`, `locale` |
+| `designs` | Rocket model JSON, owner, title, updated |
+| `sim_runs` | Summary metrics, module ids used, optional file refs |
+| `files` | PDF/CSV/thrust curves (PocketBase file fields or linked) |
+| `sensor_devices` | Pro: device tokens, project link |
+| `sensor_samples` | Pro: validated telemetry batches |
+| `calc_requests` | Optional mirror of GitHub calculation requests |
+| `admin` | Superuser via PocketBase admins (ops), not end-users |
+
+API rules: users read/write own designs; pro fields gated by `plan`; public read only for shared demos if we add them.
 
 ## Simulation core
 
@@ -58,57 +77,41 @@
 2. Web Worker so UI stays smooth
 3. Optional C/Rust → WASM for heavy Monte Carlo / fine time-step runs
 
-Modules (examples):
+Modules (examples): mass properties, aero (Barrowman-class), motors, atmosphere, 3DOF→6DOF, recovery events.
 
-- mass properties (CG, mass, inertia approx.)
-- aerodynamics (Cd models, Barrowman-class stability baseline)
-- motor thrust curves (import / manual)
-- atmosphere / wind simple models
-- 3DOF then 6DOF trajectory integration
-- recovery deployment events
-
-Each module declares: inputs, assumptions, equations (for report engine), outputs, free/pro gate.
+Each module: inputs, assumptions, equations (report), outputs, free/pro gate — full contract in [MATH.md](./MATH.md).
 
 ## Report engine
 
-Pipeline:
-
 ```
 sim run result + selected modules
-  → symbolic/step templates (Markdown + KaTeX)
-  → CSV tables (time series)
-  → PDF (print CSS or server-side renderer later)
+  → step templates (Markdown + KaTeX)
+  → CSV tables
+  → PDF (print CSS first; server render later if needed)
+  → optional PocketBase file upload
 ```
 
 User preference: off | summary | full steps.
 
-## Sensor protocol (pro, security-first)
+## Sensor protocol (pro)
 
-Design principles:
+Still security-first (sign, schema, rate limit, no ignition commands).  
+PocketBase stores devices + samples; **validation** can run in:
 
-1. **Device identity** — API keys or mTLS-style device tokens per user/project; rotatable.
-2. **Signed payloads** — HMAC or asymmetric signatures; reject unsigned.
-3. **Schema validation** — strict JSON Schema / protobuf; drop unknown fields carefully.
-4. **Rate limits + quotas** — per device and per account.
-5. **Classification** — server-side feature extraction (alt, accel, GPS quality flags); never run untrusted code from devices.
-6. **No command channel to ignition** — telemetry ingest only in v1.
-7. **Audit log** — who ingested what, when.
+- client pre-check + PocketBase API rules, and/or  
+- small Go hooks / sidecar later if rules are not enough  
 
-## Auth & admin
+## Auth, plans, admin
 
-- Email/password or OAuth (later)
-- Roles: `user`, `admin`
-- Entitlements: `plan=free|pro|edu`, feature flags
-- Admin: user list, plan override, disable accounts, view usage metrics
+- **End-user auth:** PocketBase users (email/password; OAuth later)
+- **Plans:** `free` | `pro` | `edu` on user record (payment webhook updates field)
+- **Edu:** verify university email domain / manual review flag
+- **Ops admin:** PocketBase Admin UI for collections + optional `apps/web` admin views for product metrics
 
 ## Desktop
 
-- Same `sim-core` + local project format (`*.orbit.json`)
-- Optional login for pro unlock sync
-- Prefer **Tauri** for size/security
+Same `sim-core` + local `*.orbit.json`. Optional login to unlock pro modules via PocketBase token.
 
-## OpenRocket relationship
+## OpenRocket
 
-- Prefer **clean-room** reimplementation of published methods
-- Optional **import** of common data formats (thrust curves, component CSV) under separate review
-- Do **not** vendor GPL Java sources into this Apache-2.0 tree without a deliberate dual-licensing plan (see LICENSING.md)
+Clean-room implementations; no GPL source in tree — [LICENSING.md](./LICENSING.md).

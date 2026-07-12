@@ -31,14 +31,14 @@ Phased so the product ships value early without boiling the ocean.
 - [ ] Project save/load (local + account later)
 - [ ] Richer 3D technical/render modes
 
-## Phase 3 — SaaS shell
+## Phase 3 — SaaS shell (PocketBase)
 
-- [ ] Auth (signup/login)
-- [ ] Plans: free / pro / edu verification stub
-- [ ] Cloudflare Workers API + D1 schema
-- [ ] R2 for reports/projects
-- [ ] Admin: users + plan flags
-- [ ] Entitlement gates in UI and API
+- [ ] PocketBase self-host + collections (users, designs, sim_runs, files)
+- [ ] Auth (signup/login) via PocketBase SDK
+- [ ] Plans: free / pro / edu verification stub on user record
+- [ ] File storage for PDF/CSV/thrust curves
+- [ ] Ops admin: PocketBase Admin UI + optional product admin views
+- [ ] Entitlement gates in UI (and API rules)
 
 ## Phase 4 — Pro physics & desktop
 
