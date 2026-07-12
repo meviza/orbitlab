@@ -2,6 +2,23 @@
 
 OrbitLab ships the web UI as a **static Vite SPA** on [Netlify](https://www.netlify.com/). Data/auth can later run on self-hosted PocketBase; the first public deploy uses the **in-memory** backend so the demo works without a BaaS host.
 
+## Live demo
+
+| | |
+|--|--|
+| **URL** | https://stirring-figolla-e187f5.netlify.app |
+| **Site ID** | `8095f502-65d5-461c-82e8-17dc82b9a319` |
+| **Mode** | `memory` (guest / offline) |
+
+CLI redeploy (avoids monorepo interactive picker):
+
+```bash
+pnpm --filter @orbitlab/web build
+CI=1 netlify deploy --prod --no-build --dir=apps/web/dist \
+  --site=8095f502-65d5-461c-82e8-17dc82b9a319 \
+  --filter=@orbitlab/web
+```
+
 ## Prerequisites
 
 - Node **20+**
