@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildReport } from "./build-report.js";
+import { buildPrintableHtml, buildReport } from "./build-report.js";
 
 describe("buildReport", () => {
   it("renders exam-style markdown sections with latex and prose steps", () => {
@@ -67,6 +67,57 @@ describe("buildReport", () => {
     assert.match(out.htmlPreview!, /m = \\sum_i m_i/);
   });
 
+  it("emits standalone printable HTML with KaTeX CDN and span.math for latex", () => {
+    const out = buildReport({
+      designTitle: "Math Demo",
+      summary: { apogeeM: 1 },
+      moduleResults: [
+        {
+          moduleId: "mass-properties",
+          title: "Mass properties",
+          steps: [
+            {
+              title: "Total mass",
+              latex: "m = \\sum_i m_i",
+              prose: "Sum masses.",
+            },
+          ],
+        },
+      ],
+    });
+
+    const html = out.htmlPreview!;
+    assert.match(html, /<!DOCTYPE html>/i);
+    assert.match(html, /<html\b/i);
+    assert.match(html, /@media print/);
+    assert.match(html, /@page/);
+    assert.match(html, /class="math"/);
+    assert.match(html, /data-latex=/);
+    assert.match(html, /katex/i);
+    assert.match(html, /cdn\.jsdelivr\.net\/npm\/katex@/);
+    assert.match(html, /section class="module"/);
+    assert.match(html, /div class="step"/);
+    assert.match(html, /article class="orbitlab-report"/);
+  });
+
+  it("omits KaTeX CDN when no latex steps are present", () => {
+    const html = buildPrintableHtml({
+      designTitle: "Prose only",
+      summary: { apogeeM: 3 },
+      moduleResults: [
+        {
+          moduleId: "m1",
+          steps: [{ title: "Note", prose: "No equations here." }],
+        },
+      ],
+    });
+
+    assert.match(html, /<!DOCTYPE html>/i);
+    assert.match(html, /@media print/);
+    assert.doesNotMatch(html, /cdn\.jsdelivr\.net\/npm\/katex/);
+    assert.doesNotMatch(html, /class="math"/);
+  });
+
   it("omits calculation steps when includeFullSteps is false", () => {
     const out = buildReport({
       designTitle: "Short",
@@ -117,7 +168,8 @@ describe("buildReport", () => {
     });
 
     assert.ok(out.htmlPreview);
-    assert.doesNotMatch(out.htmlPreview!, /<script>/);
+    // Title is escaped; body has no unescaped script tags.
+    assert.doesNotMatch(out.htmlPreview!, /<script>alert/);
     assert.match(out.htmlPreview!, /&lt;script&gt;/);
     assert.match(out.htmlPreview!, /a &lt; b &amp; c/);
   });

@@ -35,6 +35,10 @@ export interface BuildReportInput {
 export interface BuildReportOutput {
   readonly markdown: string;
   readonly csv: string;
-  /** Lightweight HTML preview of the markdown body (no KaTeX yet). */
+  /**
+   * Standalone HTML document (print/PDF friendly).
+   * Includes CDN KaTeX when the report has LaTeX steps.
+   * Suitable for blob download as `.html` or window.print().
+   */
   readonly htmlPreview?: string;
 }

@@ -25,6 +25,7 @@ Inspired by [OpenRocket](https://openrocket.info/) (open-source model rocket sim
 orbitlab/
 ├── apps/
 │   ├── web/                 # Presentation (Vite + React) — composition root
+│   ├── desktop/             # Tauri 2 shell wrapping apps/web (offline-capable)
 │   └── pocketbase/          # pb_schema.json, API rules, seed notes
 ├── packages/
 │   ├── domain/              # Entities, VOs, ports, specifications
@@ -46,6 +47,7 @@ orbitlab/
 - [Licensing & OpenRocket](docs/LICENSING.md)
 - [Contributing](CONTRIBUTING.md)
 - [Feature matrix (free vs pro)](docs/FEATURE-MATRIX.md)
+- [Desktop (Tauri)](docs/DESKTOP.md)
 
 ## Quick start
 
@@ -55,6 +57,7 @@ pnpm install
 pnpm test
 pnpm typecheck
 pnpm dev          # web → http://localhost:5173 (MEMORY backend by default)
+pnpm desktop:dev  # Tauri shell → same web UI (needs Rust + Xcode CLT)
 ```
 
 ### Local PocketBase (optional)

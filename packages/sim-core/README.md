@@ -24,7 +24,8 @@ Every module returns `{ moduleId, data, steps[], series? }` with **references** 
 | id | Description | Notes |
 |----|-------------|-------|
 | `mass.properties` | Resolve total mass from design / components | Constant-mass assumption for free tier |
-| `stability.margin-lite` | Educational CP/CG static margin | **Not** full Barrowman — documented approximations |
+| `stability.barrowman` | Educational Barrowman-class CP / static margin | Nose + cylindrical body + trapezoidal fins; **not** flight certification |
+| `stability.margin-lite` | Lightweight CP/CG static margin | Optional; coarser than Barrowman; still registered |
 | `aero.simple-drag` | Quadratic drag force at a velocity sample | \(D = \tfrac12\rho v^2 C_D A\) |
 | `flight.toy-vertical` | 1D vertical flight (Euler or RK4) + drag | Uses mass from `mass.properties` when present |
 
@@ -40,7 +41,7 @@ DEFAULT_FREE_MODULE_IDS = [
 // Full free educational suite
 FULL_FREE_MODULE_IDS = [
   'mass.properties',
-  'stability.margin-lite',
+  'stability.barrowman',
   'aero.simple-drag',
   'flight.toy-vertical',
 ]
@@ -76,8 +77,8 @@ Optional fields on `RocketDesignSnapshot` for the new modules:
 
 | Field | Used by |
 |-------|---------|
-| `components[].kind` / `stationM` / `lengthM` / fin geometry | `stability.margin-lite` |
-| `lengthM`, `diameterM`, `cgFromNoseM` | `stability.margin-lite` |
+| `components[].kind` / `stationM` / `lengthM` / fin geometry (`rootChordM`, `tipChordM`, `spanM`, `sweepM`, `finCount`) | `stability.barrowman`, `stability.margin-lite` |
+| `lengthM`, `diameterM`, `cgFromNoseM` | `stability.barrowman`, `stability.margin-lite` |
 | `velocitySampleMs`, `rhoKgM3` | `aero.simple-drag` |
 
 ## Usage
@@ -133,9 +134,9 @@ const full = runner.run(
 );
 
 const flight = full.byId['flight.toy-vertical'];
-const margin = full.byId['stability.margin-lite'];
+const stability = full.byId['stability.barrowman'];
 const drag = full.byId['aero.simple-drag'];
-console.log(flight?.data, margin?.data, drag?.data);
+console.log(flight?.data, stability?.data, drag?.data);
 ```
 
 ## Quality bar

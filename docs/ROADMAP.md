@@ -18,20 +18,21 @@ Phased so the product ships value early without boiling the ocean.
 - [x] Manual design params via design metadata (mass, Cd, thrust…)
 - [x] 3DOF vertical / simple ballistic sim in `sim-core`
 - [x] Charts (altitude samples + SVG)
-- [x] Report: Markdown + CSV download + step traces (`@orbitlab/report`)
+- [x] Report: Markdown + CSV + HTML/print-PDF (KaTeX CDN) + step traces
 - [x] TR/EN strings baseline
-- [x] Netlify + GitHub Actions CI config (deploy when site linked)
-- [ ] PDF print polish / KaTeX render
+- [x] Netlify + GitHub Actions CI config
+- [x] Sim suite toggle (Fast vs Full free modules)
+- [x] Desktop Tauri 2 scaffold (`apps/desktop`, `pnpm desktop:dev`)
 
 ## Phase 2 — OpenRocket-class depth (free tier)
 
 - [ ] Component library (nose, body tubes, fins, transitions, motors, recovery)
-- [x] Mass properties + **lite** stability + simple drag modules (+ golden tests)
-- [ ] Full Barrowman-class CP baseline
+- [x] Mass properties + lite stability + **Barrowman-class** `stability.barrowman` + simple drag
+- [x] Full free suite: mass → barrowman → drag → flight
 - [ ] Motor database import (public thrust curves)
 - [ ] Multi-stage / events (deploy) basic
 - [ ] Project save/load (local + account later)
-- [ ] Richer 3D technical/render modes
+- [ ] Richer 3D technical/render modes (wireframe already optional)
 
 ## Phase 3 — SaaS shell (PocketBase)
 

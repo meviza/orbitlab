@@ -32,3 +32,6 @@ apps/desktop/src-tauri/target/
 .tmp/
 .cache/
 *.tsbuildinfo
+
+.netlify/
+apps/web/.netlify/

@@ -5,8 +5,13 @@ import type {
   ReportStep,
 } from "./types.js";
 
+/** jsDelivr KaTeX CDN pin — no monorepo dependency; works when opened offline-ish after browser cache. */
+const KATEX_VERSION = "0.16.21";
+const KATEX_CSS = `https://cdn.jsdelivr.net/npm/katex@${KATEX_VERSION}/dist/katex.min.css`;
+const KATEX_JS = `https://cdn.jsdelivr.net/npm/katex@${KATEX_VERSION}/dist/katex.min.js`;
+
 /**
- * Build educational Markdown + CSV (and optional HTML preview) from a sim run
+ * Build educational Markdown + CSV (and printable HTML) from a sim run
  * trace. Pure function — no React, no I/O.
  */
 export function buildReport(input: BuildReportInput): BuildReportOutput {
@@ -14,9 +19,24 @@ export function buildReport(input: BuildReportInput): BuildReportOutput {
   const includeFullSteps = input.includeFullSteps ?? true;
   const markdown = buildMarkdown(input, title, includeFullSteps);
   const csv = buildCsv(input);
-  const htmlPreview = buildHtmlPreview(input, title, includeFullSteps);
+  const htmlPreview = buildPrintableHtml(input, title, includeFullSteps);
 
   return { markdown, csv, htmlPreview };
+}
+
+/**
+ * Full standalone HTML document suitable for blob download as `.html`
+ * and browser Print → Save as PDF. Includes print CSS and, when LaTeX
+ * steps exist, CDN KaTeX for math rendering.
+ */
+export function buildPrintableHtml(
+  input: BuildReportInput,
+  title?: string,
+  includeFullSteps?: boolean
+): string {
+  const resolvedTitle = (title ?? input.designTitle).trim() || "Untitled design";
+  const steps = includeFullSteps ?? input.includeFullSteps ?? true;
+  return buildStandaloneDocument(input, resolvedTitle, steps);
 }
 
 function buildMarkdown(
@@ -159,11 +179,239 @@ function buildCsv(input: BuildReportInput): string {
   return `${header}\n${values}`;
 }
 
+function hasLatex(input: BuildReportInput): boolean {
+  for (const mod of input.moduleResults ?? []) {
+    for (const step of mod.steps) {
+      if (step.latex?.trim()) return true;
+    }
+  }
+  return false;
+}
+
 /**
- * Minimal HTML preview: escaped prose + <pre> for latex.
- * Not a full KaTeX renderer — suitable for in-app collapsible preview.
+ * Screen: dark theme. Print: light ink-friendly layout with page margins.
+ * KaTeX CSS/JS injected only when the report contains LaTeX steps.
  */
-function buildHtmlPreview(
+function buildStandaloneDocument(
+  input: BuildReportInput,
+  title: string,
+  includeFullSteps: boolean
+): string {
+  const includeKatex = hasLatex(input);
+  const body = buildReportBody(input, title, includeFullSteps);
+  const docTitle = escapeHtml(`OrbitLab Report — ${title}`);
+
+  const katexHead = includeKatex
+    ? `  <link rel="stylesheet" href="${KATEX_CSS}" crossorigin="anonymous">\n`
+    : "";
+
+  const katexScripts = includeKatex
+    ? [
+        `  <script defer src="${KATEX_JS}" crossorigin="anonymous"></script>`,
+        `  <script>`,
+        `    document.addEventListener("DOMContentLoaded", function () {`,
+        `      function renderMath() {`,
+        `        if (typeof katex === "undefined") return;`,
+        `        document.querySelectorAll("span.math").forEach(function (el) {`,
+        `          var tex = el.getAttribute("data-latex") || el.textContent || "";`,
+        `          try {`,
+        `            katex.render(tex, el, { displayMode: true, throwOnError: false });`,
+        `          } catch (e) { /* leave raw latex */ }`,
+        `        });`,
+        `      }`,
+        `      if (typeof katex !== "undefined") renderMath();`,
+        `      else {`,
+        `        var n = 0;`,
+        `        var t = setInterval(function () {`,
+        `          if (typeof katex !== "undefined" || ++n > 40) {`,
+        `            clearInterval(t);`,
+        `            renderMath();`,
+        `          }`,
+        `        }, 50);`,
+        `      }`,
+        `    });`,
+        `  </script>`,
+      ].join("\n")
+    : "";
+
+  return [
+    `<!DOCTYPE html>`,
+    `<html lang="en">`,
+    `<head>`,
+    `  <meta charset="utf-8">`,
+    `  <meta name="viewport" content="width=device-width, initial-scale=1">`,
+    `  <title>${docTitle}</title>`,
+    katexHead + `  <style>`,
+    REPORT_CSS,
+    `  </style>`,
+    `</head>`,
+    `<body>`,
+    body,
+    katexScripts,
+    `</body>`,
+    `</html>`,
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+}
+
+const REPORT_CSS = `
+    :root {
+      color-scheme: dark light;
+      --bg: #0f1419;
+      --surface: #1a222c;
+      --text: #e7ecf1;
+      --muted: #9aa7b5;
+      --border: #2a3542;
+      --accent: #c4783a;
+      --danger: #e85d5d;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 16px; }
+    body {
+      margin: 0;
+      padding: 1.5rem;
+      font-family: var(--sans);
+      line-height: 1.55;
+      background: var(--bg);
+      color: var(--text);
+    }
+    article.orbitlab-report {
+      max-width: 48rem;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      font-size: 1.15rem;
+      margin: 1.75rem 0 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 1.05rem;
+      margin: 0 0 0.75rem;
+      color: var(--accent);
+      page-break-after: avoid;
+    }
+    h4 {
+      font-size: 0.95rem;
+      margin: 0 0 0.4rem;
+      page-break-after: avoid;
+    }
+    p.meta {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin: 0 0 1rem;
+    }
+    p { margin: 0.4rem 0; }
+    p.error { color: var(--danger); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 0.5rem 0 1rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+    }
+    th { background: var(--surface); font-weight: 600; }
+    section.module {
+      margin: 1rem 0 1.5rem;
+      padding: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      page-break-inside: avoid;
+    }
+    div.step {
+      margin: 0.75rem 0;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+      page-break-inside: avoid;
+    }
+    div.step:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+    span.math {
+      display: block;
+      margin: 0.6rem 0;
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      overflow-x: auto;
+      page-break-inside: avoid;
+    }
+    /* KaTeX overrides inside our blocks */
+    span.math .katex-display { margin: 0; }
+    pre.raw-data {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      overflow-x: auto;
+      padding: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    footer.report-footer {
+      margin-top: 2rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    @media print {
+      @page {
+        margin: 18mm 16mm;
+        size: auto;
+      }
+      :root {
+        --bg: #ffffff;
+        --surface: #f6f7f9;
+        --text: #111827;
+        --muted: #4b5563;
+        --border: #d1d5db;
+        --accent: #9a4f12;
+        --danger: #b91c1c;
+      }
+      body {
+        background: #fff;
+        color: #111;
+        padding: 0;
+        font-size: 11pt;
+      }
+      article.orbitlab-report { max-width: none; }
+      section.module {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 0;
+        break-inside: avoid;
+      }
+      div.step { break-inside: avoid; }
+      span.math {
+        background: #f9fafb;
+        border: 1px solid #ddd;
+        break-inside: avoid;
+      }
+      h2, h3, h4 { break-after: avoid; }
+      a { color: inherit; text-decoration: none; }
+    }
+`.trim();
+
+function buildReportBody(
   input: BuildReportInput,
   title: string,
   includeFullSteps: boolean
@@ -177,6 +425,14 @@ function buildHtmlPreview(
   if (input.runId) meta.push(`Run ID: ${escapeHtml(input.runId)}`);
   if (input.designId) meta.push(`Design ID: ${escapeHtml(input.designId)}`);
   if (input.status) meta.push(`Status: ${escapeHtml(input.status)}`);
+  if (input.moduleIds?.length) {
+    meta.push(`Modules: ${escapeHtml(input.moduleIds.join(", "))}`);
+  } else if (input.moduleResults?.length) {
+    meta.push(
+      `Modules: ${escapeHtml(input.moduleResults.map((m) => m.moduleId).join(", "))}`
+    );
+  }
+  if (input.createdAt) meta.push(`Created: ${escapeHtml(input.createdAt)}`);
   if (meta.length) {
     parts.push(`<p class="meta">${meta.join(" · ")}</p>`);
   }
@@ -188,7 +444,9 @@ function buildHtmlPreview(
   if (entries.length === 0) {
     parts.push(`<p><em>No summary metrics.</em></p>`);
   } else {
-    parts.push(`<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>`);
+    parts.push(
+      `<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>`
+    );
     for (const [key, value] of entries) {
       parts.push(
         `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(formatMetric(value))}</td></tr>`
@@ -215,7 +473,14 @@ function buildHtmlPreview(
         parts.push(`<section class="module">`);
         parts.push(`<h3>${escapeHtml(heading)}</h3>`);
         if (mod.steps.length === 0) {
-          parts.push(`<p><em>No steps for this module.</em></p>`);
+          if (mod.data !== undefined) {
+            parts.push(`<p><em>No equation steps; raw module data:</em></p>`);
+            parts.push(
+              `<pre class="raw-data">${escapeHtml(JSON.stringify(mod.data, null, 2))}</pre>`
+            );
+          } else {
+            parts.push(`<p><em>No steps for this module.</em></p>`);
+          }
         } else {
           mod.steps.forEach((step, i) => {
             parts.push(`<div class="step">`);
@@ -223,8 +488,9 @@ function buildHtmlPreview(
               `<h4>Step ${i + 1}: ${escapeHtml(step.title)}</h4>`
             );
             if (step.latex?.trim()) {
+              const tex = step.latex.trim();
               parts.push(
-                `<pre class="latex">${escapeHtml(step.latex.trim())}</pre>`
+                `<span class="math" data-latex="${escapeHtml(tex)}">${escapeHtml(tex)}</span>`
               );
             }
             if (step.prose?.trim()) {
@@ -238,6 +504,9 @@ function buildHtmlPreview(
     }
   }
 
+  parts.push(
+    `<footer class="report-footer">Generated by OrbitLab report engine. Print via browser: File → Print → Save as PDF.</footer>`
+  );
   parts.push(`</article>`);
   return parts.join("\n");
 }

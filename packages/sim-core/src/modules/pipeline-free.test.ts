@@ -8,7 +8,7 @@ import {
 import { SimulationRunner } from '../runner.js';
 import type { RocketDesignSnapshot } from '../types.js';
 import type { SimpleDragData } from './simple-drag.js';
-import type { StabilityMarginLiteData } from './stability-margin-lite.js';
+import type { StabilityBarrowmanData } from './stability-barrowman.js';
 import type { ToyVerticalFlightData } from './toy-vertical-flight.js';
 
 const design: RocketDesignSnapshot = {
@@ -61,10 +61,10 @@ describe('free module id sets', () => {
     ]);
   });
 
-  it('FULL includes stability + aero in educational order', () => {
+  it('FULL includes barrowman stability + aero in educational order', () => {
     assert.deepEqual([...FULL_FREE_MODULE_IDS], [
       'mass.properties',
-      'stability.margin-lite',
+      'stability.barrowman',
       'aero.simple-drag',
       'flight.toy-vertical',
     ]);
@@ -78,7 +78,7 @@ describe('FULL_FREE_MODULE_IDS pipeline integration', () => {
 
     assert.equal(summary.ordered.length, 4);
     assert.ok(summary.byId['mass.properties']);
-    assert.ok(summary.byId['stability.margin-lite']);
+    assert.ok(summary.byId['stability.barrowman']);
     assert.ok(summary.byId['aero.simple-drag']);
     assert.ok(summary.byId['flight.toy-vertical']);
 
@@ -89,12 +89,14 @@ describe('FULL_FREE_MODULE_IDS pipeline integration', () => {
     assert.equal(mass.totalMassKg, 0.5);
     assert.equal(mass.source, 'components-sum');
 
-    const stab = summary.byId['stability.margin-lite']!
-      .data as StabilityMarginLiteData;
-    assert.ok(summary.byId['stability.margin-lite']!.steps.length >= 3);
-    assert.ok(stab.assumptions.some((a) => /not a full Barrowman/i.test(a)));
-    assert.ok(stab.staticMarginCalibers !== 0 || stab.cpFromNoseM >= 0);
-    assert.ok(Number.isFinite(stab.staticMarginCalibers));
+    const stab = summary.byId['stability.barrowman']!
+      .data as StabilityBarrowmanData;
+    assert.ok(summary.byId['stability.barrowman']!.steps.length >= 5);
+    assert.ok(stab.assumptions.some((a) => /Barrowman/i.test(a)));
+    assert.ok(stab.assumptions.some((a) => /educational/i.test(a)));
+    assert.ok(Number.isFinite(stab.stabilityCalibers));
+    assert.ok(stab.caliberM > 0);
+    assert.ok(stab.cpFromNoseM > 0);
 
     const aero = summary.byId['aero.simple-drag']!.data as SimpleDragData;
     assert.ok(aero.dragForceN > 0);
@@ -109,7 +111,7 @@ describe('FULL_FREE_MODULE_IDS pipeline integration', () => {
     assert.ok(flight.samples.length > 10);
   });
 
-  it('registry registers all four free modules', () => {
+  it('registry registers all five free modules (barrowman + optional margin-lite)', () => {
     const reg = createDefaultRegistry();
     const free = reg.listByTier('free');
     const ids = free.map((m) => m.id).sort();
@@ -117,9 +119,12 @@ describe('FULL_FREE_MODULE_IDS pipeline integration', () => {
       'aero.simple-drag',
       'flight.toy-vertical',
       'mass.properties',
+      'stability.barrowman',
       'stability.margin-lite',
     ]);
-    assert.equal(reg.size, 4);
+    assert.equal(reg.size, 5);
+    assert.ok(reg.has('stability.margin-lite'));
+    assert.ok(reg.has('stability.barrowman'));
   });
 
   it('DEFAULT pipeline still only runs two modules', () => {

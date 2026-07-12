@@ -1,0 +1,19 @@
+{
+  "name": "@orbitlab/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OrbitLab desktop shell — Tauri 2 wrapping apps/web + sim-core (offline memory backend by default)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,5 +1,6 @@
 import { massPropertiesModule } from './modules/mass-properties.js';
 import { simpleDragModule } from './modules/simple-drag.js';
+import { stabilityBarrowmanModule } from './modules/stability-barrowman.js';
 import { stabilityMarginLiteModule } from './modules/stability-margin-lite.js';
 import { toyVerticalFlightModule } from './modules/toy-vertical-flight.js';
 import { SimulationPipeline } from './pipeline.js';
@@ -11,6 +12,8 @@ import { ModuleRegistry } from './registry.js';
 export function createDefaultRegistry(): ModuleRegistry {
   const registry = new ModuleRegistry();
   registry.register(massPropertiesModule);
+  registry.register(stabilityBarrowmanModule);
+  // Optional lite estimator — still available, not in FULL_FREE by default
   registry.register(stabilityMarginLiteModule);
   registry.register(simpleDragModule);
   registry.register(toyVerticalFlightModule);
@@ -34,12 +37,12 @@ export const DEFAULT_FREE_MODULE_IDS = [
 ] as const;
 
 /**
- * Full free-tier suite: mass → stability → aero → flight.
- * Use when the host wants every educational free module in one pass.
+ * Full free-tier suite: mass → Barrowman stability → aero → flight.
+ * `stability.margin-lite` remains registered for hosts that opt in.
  */
 export const FULL_FREE_MODULE_IDS = [
   'mass.properties',
-  'stability.margin-lite',
+  'stability.barrowman',
   'aero.simple-drag',
   'flight.toy-vertical',
 ] as const;

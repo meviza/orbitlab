@@ -6,7 +6,10 @@ export interface ReportDto {
   readonly title: string;
   readonly markdown: string;
   readonly csv: string;
-  /** Optional HTML preview from the report engine. */
+  /**
+   * Standalone printable HTML from the report engine
+   * (print CSS + optional CDN KaTeX). Download as .html or print to PDF.
+   */
   readonly htmlPreview?: string;
   readonly generatedAt: string;
 }

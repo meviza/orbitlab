@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OrbitLab",
+  "version": "0.1.0",
+  "identifier": "com.orbitlab.app",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @orbitlab/web dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "pnpm --filter @orbitlab/web build",
+    "frontendDist": "../../web/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "OrbitLab",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Education",
+    "shortDescription": "3D rocket design & simulation",
+    "longDescription": "OrbitLab desktop — same web UI and sim-core as the browser app. Offline uses the in-memory backend by default."
+  }
+}

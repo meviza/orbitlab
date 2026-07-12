@@ -1,4 +1,4 @@
-export { buildReport } from "./build-report.js";
+export { buildReport, buildPrintableHtml } from "./build-report.js";
 export type {
   BuildReportInput,
   BuildReportOutput,

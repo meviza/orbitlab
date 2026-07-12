@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DesignDto, ReportDto, SimRunResultDto } from "@orbitlab/application";
+import {
+  DEFAULT_FREE_MODULE_IDS,
+  FULL_FREE_MODULE_IDS,
+} from "@orbitlab/sim-core";
 import { useContainer, useLocale } from "../../app/providers";
 import { t } from "../../shared/i18n/messages";
 import { Button } from "../../shared/ui/Button";
 import { Card } from "../../shared/ui/Card";
 import { useRunSimulation } from "./useRunSimulation";
+
+/** Interactive suite presets for free-tier runs. */
+type SuiteMode = "fast" | "full";
+
+function modulesForSuite(mode: SuiteMode): readonly string[] {
+  return mode === "full" ? FULL_FREE_MODULE_IDS : DEFAULT_FREE_MODULE_IDS;
+}
 
 function AltitudeChart({
   samples,
@@ -113,10 +124,16 @@ export function SimRunnerPanel() {
   const { result, loading, error, run } = useRunSimulation();
   const [designs, setDesigns] = useState<DesignDto[]>([]);
   const [designId, setDesignId] = useState<string>("demo_model_a");
+  const [suiteMode, setSuiteMode] = useState<SuiteMode>("fast");
   const [report, setReport] = useState<ReportDto | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  const selectedModuleIds = useMemo(
+    () => modulesForSuite(suiteMode),
+    [suiteMode]
+  );
 
   useEffect(() => {
     void (async () => {
@@ -177,27 +194,62 @@ export function SimRunnerPanel() {
 
   async function handleRun() {
     if (!designId) return;
-    await run(designId);
+    await run(designId, selectedModuleIds);
   }
 
-  async function handleDownload(kind: "csv" | "markdown") {
-    if (!result) return;
-    let current = report;
-    if (!current) {
-      current = await buildReportFromRun(result, active?.title);
-    }
+  async function ensureReport(): Promise<ReportDto | null> {
+    if (!result) return null;
+    if (report) return report;
+    return buildReportFromRun(result, active?.title);
+  }
+
+  async function handleDownload(kind: "csv" | "markdown" | "html") {
+    const current = await ensureReport();
     if (!current) return;
 
     const base = slugify(current.title);
     if (kind === "csv") {
       downloadTextFile(current.csv, `${base}.csv`, "text/csv;charset=utf-8");
-    } else {
+    } else if (kind === "markdown") {
       downloadTextFile(
         current.markdown,
         `${base}.md`,
         "text/markdown;charset=utf-8"
       );
+    } else {
+      const html = current.htmlPreview ?? "";
+      if (!html) return;
+      downloadTextFile(html, `${base}.html`, "text/html;charset=utf-8");
     }
+  }
+
+  async function handlePrintReport() {
+    const current = await ensureReport();
+    const html = current?.htmlPreview;
+    if (!html) return;
+
+    const win = window.open("", "_blank", "noopener,noreferrer");
+    if (!win) {
+      // Popup blocked — fall back to downloading the HTML file.
+      await handleDownload("html");
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    // Wait briefly for CDN KaTeX (if present) to render span.math, then print once.
+    let printed = false;
+    const tryPrint = () => {
+      if (printed || win.closed) return;
+      printed = true;
+      try {
+        win.focus();
+        win.print();
+      } catch {
+        /* ignore */
+      }
+    };
+    window.setTimeout(tryPrint, 600);
   }
 
   const chartSamples = useMemo(() => {
@@ -231,52 +283,102 @@ export function SimRunnerPanel() {
           </Button>
         }
       >
-        <label className="stack" style={{ gap: "0.35rem", maxWidth: 360 }}>
-          <span className="muted" style={{ fontSize: "0.78rem" }}>
-            Design
-          </span>
-          <select
-            value={designId}
-            onChange={(e) => {
-              setDesignId(e.target.value);
-              sessionStorage.setItem("orbitlab.activeDesignId", e.target.value);
-            }}
-            style={{
-              padding: "0.45rem 0.6rem",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--border-strong)",
-              background: "var(--bg)",
-            }}
-          >
-            {designs.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        {active && (
-          <p style={{ marginTop: "0.75rem", marginBottom: 0, fontSize: "0.88rem" }}>
-            mass{" "}
-            <span className="accent">
-              {String(active.metadata.massKg ?? "—")}
-            </span>{" "}
-            kg · thrust{" "}
-            <span className="accent">
-              {String(active.metadata.thrustN ?? "—")}
-            </span>{" "}
-            N · burn{" "}
-            <span className="accent">
-              {String(active.metadata.burnTimeS ?? "—")}
-            </span>{" "}
-            s
-          </p>
-        )}
-        {error && (
-          <p style={{ color: "var(--danger)", marginTop: "0.75rem" }}>
-            {error}
-          </p>
-        )}
+        <div className="stack" style={{ gap: "0.85rem" }}>
+          <label className="stack" style={{ gap: "0.35rem", maxWidth: 360 }}>
+            <span className="muted" style={{ fontSize: "0.78rem" }}>
+              {t(locale, "simDesign")}
+            </span>
+            <select
+              value={designId}
+              onChange={(e) => {
+                setDesignId(e.target.value);
+                sessionStorage.setItem(
+                  "orbitlab.activeDesignId",
+                  e.target.value
+                );
+              }}
+              style={{
+                padding: "0.45rem 0.6rem",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--border-strong)",
+                background: "var(--bg)",
+              }}
+            >
+              {designs.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="stack" style={{ gap: "0.4rem" }}>
+            <span className="muted" style={{ fontSize: "0.78rem" }}>
+              {t(locale, "simSuite")}
+            </span>
+            <div
+              className="segmented"
+              role="group"
+              aria-label={t(locale, "simSuite")}
+            >
+              <button
+                type="button"
+                aria-pressed={suiteMode === "fast"}
+                disabled={loading}
+                onClick={() => setSuiteMode("fast")}
+              >
+                {t(locale, "simSuiteFast")}
+              </button>
+              <button
+                type="button"
+                aria-pressed={suiteMode === "full"}
+                disabled={loading}
+                onClick={() => setSuiteMode("full")}
+              >
+                {t(locale, "simSuiteFull")}
+              </button>
+            </div>
+            <p className="faint" style={{ margin: 0, fontSize: "0.78rem" }}>
+              {suiteMode === "fast"
+                ? t(locale, "simSuiteFastHint")
+                : t(locale, "simSuiteFullHint")}
+            </p>
+          </div>
+
+          <div className="stack" style={{ gap: "0.4rem" }}>
+            <span className="muted" style={{ fontSize: "0.78rem" }}>
+              {t(locale, "simModules")}
+            </span>
+            <div className="chip-row" aria-live="polite">
+              {selectedModuleIds.map((id) => (
+                <span key={id} className="chip">
+                  {id}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {active && (
+            <p style={{ margin: 0, fontSize: "0.88rem" }}>
+              mass{" "}
+              <span className="accent">
+                {String(active.metadata.massKg ?? "—")}
+              </span>{" "}
+              kg · thrust{" "}
+              <span className="accent">
+                {String(active.metadata.thrustN ?? "—")}
+              </span>{" "}
+              N · burn{" "}
+              <span className="accent">
+                {String(active.metadata.burnTimeS ?? "—")}
+              </span>{" "}
+              s
+            </p>
+          )}
+          {error && (
+            <p style={{ color: "var(--danger)", margin: 0 }}>{error}</p>
+          )}
+        </div>
       </Card>
 
       {result ? (
@@ -386,6 +488,20 @@ export function SimRunnerPanel() {
                   onClick={() => void handleDownload("markdown")}
                 >
                   {t(locale, "simExportMd")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={exporting || !report?.htmlPreview}
+                  onClick={() => void handleDownload("html")}
+                >
+                  {t(locale, "simExportHtml")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={exporting || !report?.htmlPreview}
+                  onClick={() => void handlePrintReport()}
+                >
+                  {t(locale, "simPrintReport")}
                 </Button>
                 <Button
                   variant="secondary"

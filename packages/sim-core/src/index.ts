@@ -76,6 +76,17 @@ export {
   type ComponentCpContribution,
 } from './modules/stability-margin-lite.js';
 export {
+  stabilityBarrowmanModule,
+  computeStabilityBarrowman,
+  estimateCgFromComponents as estimateCgFromComponentsBarrowman,
+  noseBarrowmanContribution,
+  bodyBarrowmanContribution,
+  finBarrowmanContribution,
+  type StabilityBarrowmanInput,
+  type StabilityBarrowmanData,
+  type BarrowmanPartContribution,
+} from './modules/stability-barrowman.js';
+export {
   toyVerticalFlightModule,
   simulateToyVertical,
   type ToyVerticalFlightData,

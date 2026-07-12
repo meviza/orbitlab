@@ -49,6 +49,11 @@ export interface DesignComponent {
   rootChordM?: number;
   /** Fin tip chord (m) */
   tipChordM?: number;
+  /**
+   * Fin leading-edge sweep distance along the body axis (m):
+   * axial offset of tip LE aft of root LE. Used by Barrowman mid-chord length.
+   */
+  sweepM?: number;
   /** Number of fins when kind is fin */
   finCount?: number;
   /** Free-form passthrough metadata */
