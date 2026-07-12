@@ -4,38 +4,36 @@
 
 | Layer | Choice |
 |-------|--------|
-| Web | Netlify (React + dark UI + Three.js / R3F) |
+| Architecture | **Clean Architecture** + ports & adapters — [CLEAN-ARCHITECTURE.md](./CLEAN-ARCHITECTURE.md) |
+| Web | Netlify (React + dark UI + Three.js / R3F later) |
 | BaaS / DB | **PocketBase** (Auth, SQLite, files, realtime, admin UI) |
 | Hosting PocketBase | Self-host (Render / Fly.io / VPS) — single binary |
-| Math / sim | `packages/sim-core` modules (TS → Worker → optional WASM) |
+| Math / sim | `packages/sim-core` Strategy/Registry/Pipeline modules |
 | Desktop later | Tauri + same sim-core |
 | Not in scope | Supabase, Cloudflare D1 as primary DB |
 
-Deep dive on numerics: [MATH.md](./MATH.md).
+Deep dive on numerics: [MATH.md](./MATH.md). Clean Arch: [CLEAN-ARCHITECTURE.md](./CLEAN-ARCHITECTURE.md).
 
-## High-level
+## High-level (Clean Architecture)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  apps/web (Netlify)                                         │
-│  React + dark UI + Three.js editor + charts + report UI     │
-└───────────────────────────┬─────────────────────────────────┘
-                            │ HTTPS (JS SDK / REST)
-┌───────────────────────────▼─────────────────────────────────┐
-│  PocketBase (self-hosted)                                   │
-│  Auth · collections (SQL/SQLite) · file storage · realtime  │
-│  Admin UI · API rules (RBAC) · optional hooks               │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│  packages/sim-core  (runs in browser Worker / desktop)      │
-│  Calculation modules: free + pro · report traces            │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│  apps/desktop (later)                                       │
-│  Offline projects; optional login for pro entitlements      │
-└─────────────────────────────────────────────────────────────┘
+ apps/web (Presentation + composition root)
+    │  use cases only — no PB SDK in features
+    ▼
+ packages/application  (RunSimulation, SaveDesign, …)
+    │
+    ▼
+ packages/domain  (entities, ports, Result, specifications)
+    │                    │
+    ▼                    ▼
+ packages/sim-core     packages/infrastructure
+ Strategy/Pipeline     PocketBase repositories + mappers
+    │                    │
+    │                    ▼
+    │              PocketBase (self-host)
+    │              Auth · SQLite · files · realtime · admin
+    ▼
+ (browser Worker / desktop same core)
 ```
 
 ## Why PocketBase (vs the shortlist)

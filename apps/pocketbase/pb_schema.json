@@ -1,0 +1,562 @@
+[
+  {
+    "id": "olusersauth0001",
+    "name": "users",
+    "type": "auth",
+    "system": false,
+    "listRule": "id = @request.auth.id",
+    "viewRule": "id = @request.auth.id",
+    "createRule": "",
+    "updateRule": "id = @request.auth.id && (@request.body.plan:isset = false || @request.body.plan = plan) && (@request.body.edu_verified:isset = false || @request.body.edu_verified = edu_verified)",
+    "deleteRule": "id = @request.auth.id",
+    "manageRule": null,
+    "authRule": "",
+    "passwordAuth": {
+      "enabled": true,
+      "identityFields": ["email"]
+    },
+    "oauth2": {
+      "enabled": false,
+      "mappedFields": {
+        "id": "",
+        "name": "display_name",
+        "username": "",
+        "avatarURL": ""
+      },
+      "providers": []
+    },
+    "fields": [
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "system": true,
+        "required": true,
+        "primaryKey": true,
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "pattern": "^[a-z0-9]+$",
+        "min": 15,
+        "max": 15,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "password901924565",
+        "name": "password",
+        "type": "password",
+        "system": true,
+        "required": true,
+        "hidden": true,
+        "presentable": false,
+        "min": 8,
+        "max": 0,
+        "pattern": "",
+        "cost": 0
+      },
+      {
+        "id": "text2504183744",
+        "name": "tokenKey",
+        "type": "text",
+        "system": true,
+        "required": true,
+        "primaryKey": false,
+        "autogeneratePattern": "[a-zA-Z0-9]{50}",
+        "pattern": "",
+        "min": 30,
+        "max": 60,
+        "hidden": true,
+        "presentable": false
+      },
+      {
+        "id": "email3885137012",
+        "name": "email",
+        "type": "email",
+        "system": true,
+        "required": true,
+        "hidden": false,
+        "presentable": false,
+        "exceptDomains": null,
+        "onlyDomains": null
+      },
+      {
+        "id": "bool1547992806",
+        "name": "emailVisibility",
+        "type": "bool",
+        "system": true,
+        "required": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "bool256245529",
+        "name": "verified",
+        "type": "bool",
+        "system": true,
+        "required": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "ol_plan_select01",
+        "name": "plan",
+        "type": "select",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": true,
+        "maxSelect": 1,
+        "values": ["free", "pro", "edu"]
+      },
+      {
+        "id": "ol_edu_verified1",
+        "name": "edu_verified",
+        "type": "bool",
+        "system": false,
+        "required": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "ol_display_name1",
+        "name": "display_name",
+        "type": "text",
+        "system": false,
+        "required": false,
+        "primaryKey": false,
+        "autogeneratePattern": "",
+        "pattern": "",
+        "min": 0,
+        "max": 120,
+        "hidden": false,
+        "presentable": true
+      },
+      {
+        "id": "autodate2990389176",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "autodate3332085495",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": true,
+        "hidden": false,
+        "presentable": false
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_tokenKey_olusersauth0001` ON `users` (`tokenKey`)",
+      "CREATE UNIQUE INDEX `idx_email_olusersauth0001` ON `users` (`email`) WHERE `email` != ''"
+    ]
+  },
+  {
+    "id": "oldesigns000001",
+    "name": "designs",
+    "type": "base",
+    "system": false,
+    "listRule": "owner = @request.auth.id",
+    "viewRule": "owner = @request.auth.id",
+    "createRule": "@request.auth.id != \"\" && owner = @request.auth.id",
+    "updateRule": "owner = @request.auth.id",
+    "deleteRule": "owner = @request.auth.id",
+    "fields": [
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "system": true,
+        "required": true,
+        "primaryKey": true,
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "pattern": "^[a-z0-9]+$",
+        "min": 15,
+        "max": 15,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "ol_design_title1",
+        "name": "title",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "primaryKey": false,
+        "autogeneratePattern": "",
+        "pattern": "",
+        "min": 1,
+        "max": 200,
+        "hidden": false,
+        "presentable": true
+      },
+      {
+        "id": "ol_design_owner1",
+        "name": "owner",
+        "type": "relation",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "olusersauth0001",
+        "cascadeDelete": true,
+        "minSelect": null,
+        "maxSelect": 1,
+        "displayFields": ["display_name", "email"]
+      },
+      {
+        "id": "ol_design_comps1",
+        "name": "components",
+        "type": "json",
+        "system": false,
+        "required": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSize": 2000000
+      },
+      {
+        "id": "ol_design_meta01",
+        "name": "metadata",
+        "type": "json",
+        "system": false,
+        "required": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSize": 500000
+      },
+      {
+        "id": "autodate2990389176",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "autodate3332085495",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": true,
+        "hidden": false,
+        "presentable": false
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_designs_owner` ON `designs` (`owner`)",
+      "CREATE INDEX `idx_designs_updated` ON `designs` (`updated`)"
+    ]
+  },
+  {
+    "id": "olsimruns000001",
+    "name": "sim_runs",
+    "type": "base",
+    "system": false,
+    "listRule": "owner = @request.auth.id",
+    "viewRule": "owner = @request.auth.id",
+    "createRule": "@request.auth.id != \"\" && owner = @request.auth.id",
+    "updateRule": "owner = @request.auth.id",
+    "deleteRule": "owner = @request.auth.id",
+    "fields": [
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "system": true,
+        "required": true,
+        "primaryKey": true,
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "pattern": "^[a-z0-9]+$",
+        "min": 15,
+        "max": 15,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "ol_sim_design001",
+        "name": "design",
+        "type": "relation",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "oldesigns000001",
+        "cascadeDelete": true,
+        "minSelect": null,
+        "maxSelect": 1,
+        "displayFields": ["title"]
+      },
+      {
+        "id": "ol_sim_owner0001",
+        "name": "owner",
+        "type": "relation",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "olusersauth0001",
+        "cascadeDelete": true,
+        "minSelect": null,
+        "maxSelect": 1,
+        "displayFields": ["display_name", "email"]
+      },
+      {
+        "id": "ol_sim_modules01",
+        "name": "module_ids",
+        "type": "json",
+        "system": false,
+        "required": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSize": 100000
+      },
+      {
+        "id": "ol_sim_status001",
+        "name": "status",
+        "type": "select",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": true,
+        "maxSelect": 1,
+        "values": ["pending", "running", "completed", "failed", "cancelled"]
+      },
+      {
+        "id": "ol_sim_summary01",
+        "name": "summary",
+        "type": "json",
+        "system": false,
+        "required": false,
+        "hidden": false,
+        "presentable": false,
+        "maxSize": 2000000
+      },
+      {
+        "id": "autodate2990389176",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "autodate3332085495",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": true,
+        "hidden": false,
+        "presentable": false
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_sim_runs_owner` ON `sim_runs` (`owner`)",
+      "CREATE INDEX `idx_sim_runs_design` ON `sim_runs` (`design`)",
+      "CREATE INDEX `idx_sim_runs_status` ON `sim_runs` (`status`)"
+    ]
+  },
+  {
+    "id": "olsensordevs001",
+    "name": "sensor_devices",
+    "type": "base",
+    "system": false,
+    "listRule": "owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "viewRule": "owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "createRule": "@request.auth.id != \"\" && owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "updateRule": "owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "deleteRule": "owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "fields": [
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "system": true,
+        "required": true,
+        "primaryKey": true,
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "pattern": "^[a-z0-9]+$",
+        "min": 15,
+        "max": 15,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "ol_sdev_owner001",
+        "name": "owner",
+        "type": "relation",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "olusersauth0001",
+        "cascadeDelete": true,
+        "minSelect": null,
+        "maxSelect": 1,
+        "displayFields": ["display_name", "email"]
+      },
+      {
+        "id": "ol_sdev_name0001",
+        "name": "name",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "primaryKey": false,
+        "autogeneratePattern": "",
+        "pattern": "",
+        "min": 1,
+        "max": 120,
+        "hidden": false,
+        "presentable": true
+      },
+      {
+        "id": "ol_sdev_token001",
+        "name": "token_hash",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "primaryKey": false,
+        "autogeneratePattern": "",
+        "pattern": "",
+        "min": 32,
+        "max": 128,
+        "hidden": true,
+        "presentable": false
+      },
+      {
+        "id": "ol_sdev_design01",
+        "name": "design",
+        "type": "relation",
+        "system": false,
+        "required": false,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "oldesigns000001",
+        "cascadeDelete": false,
+        "minSelect": null,
+        "maxSelect": 1,
+        "displayFields": ["title"]
+      },
+      {
+        "id": "autodate2990389176",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "autodate3332085495",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": true,
+        "hidden": false,
+        "presentable": false
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_sensor_devices_owner` ON `sensor_devices` (`owner`)",
+      "CREATE UNIQUE INDEX `idx_sensor_devices_token` ON `sensor_devices` (`token_hash`)"
+    ]
+  },
+  {
+    "id": "olsensorsamps01",
+    "name": "sensor_samples",
+    "type": "base",
+    "system": false,
+    "listRule": "device.owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "viewRule": "device.owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "createRule": "@request.auth.id != \"\" && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\") && device.owner = @request.auth.id",
+    "updateRule": null,
+    "deleteRule": "device.owner = @request.auth.id && (@request.auth.plan = \"pro\" || @request.auth.plan = \"edu\")",
+    "fields": [
+      {
+        "id": "text3208210256",
+        "name": "id",
+        "type": "text",
+        "system": true,
+        "required": true,
+        "primaryKey": true,
+        "autogeneratePattern": "[a-z0-9]{15}",
+        "pattern": "^[a-z0-9]+$",
+        "min": 15,
+        "max": 15,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "ol_ssamp_device1",
+        "name": "device",
+        "type": "relation",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": false,
+        "collectionId": "olsensordevs001",
+        "cascadeDelete": true,
+        "minSelect": null,
+        "maxSelect": 1,
+        "displayFields": ["name"]
+      },
+      {
+        "id": "ol_ssamp_payload",
+        "name": "payload",
+        "type": "json",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": false,
+        "maxSize": 1000000
+      },
+      {
+        "id": "ol_ssamp_recorded",
+        "name": "recorded_at",
+        "type": "date",
+        "system": false,
+        "required": true,
+        "hidden": false,
+        "presentable": true,
+        "min": "",
+        "max": ""
+      },
+      {
+        "id": "autodate2990389176",
+        "name": "created",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": false,
+        "hidden": false,
+        "presentable": false
+      },
+      {
+        "id": "autodate3332085495",
+        "name": "updated",
+        "type": "autodate",
+        "system": false,
+        "onCreate": true,
+        "onUpdate": true,
+        "hidden": false,
+        "presentable": false
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_sensor_samples_device` ON `sensor_samples` (`device`)",
+      "CREATE INDEX `idx_sensor_samples_recorded` ON `sensor_samples` (`recorded_at`)"
+    ]
+  }
+]

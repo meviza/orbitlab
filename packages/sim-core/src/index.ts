@@ -1,64 +1,75 @@
 /**
- * OrbitLab simulation core — placeholder.
- * Phase 1 will add mass properties, aero, integration, and event models.
+ * @orbitlab/sim-core
+ * Physics and numerics engine — pure TypeScript calculation modules.
+ *
+ * Patterns: Strategy (CalcModule), Registry, Pipeline, Factory, Observer.
  */
 
-export type Vec3 = { x: number; y: number; z: number };
+// Types
+export type {
+  Vec3,
+  SimConfig,
+  SimSample,
+  RocketDesignSnapshot,
+} from './types.js';
+export { DEFAULT_SIM_CONFIG } from './types.js';
 
-export interface SimConfig {
-  /** Time step (s) */
-  dt: number;
-  /** Max simulation time (s) */
-  tMax: number;
-}
+// Module contract (Strategy)
+export type {
+  ModuleTier,
+  EquationStep,
+  ModuleResult,
+  CalcModule,
+  SimContext,
+} from './module.js';
 
-export interface SimSample {
-  t: number;
-  altitude: number;
-  velocity: number;
-}
+// Registry
+export { ModuleRegistry } from './registry.js';
 
-/**
- * Toy vertical flight: constant thrust then coast under g.
- * Educational placeholder — not flight-accurate.
- */
-export function simulateToyVertical(
-  opts: {
-    massKg: number;
-    thrustN: number;
-    burnTimeS: number;
-    cd?: number;
-    areaM2?: number;
-  },
-  config: SimConfig = { dt: 0.01, tMax: 30 }
-): SimSample[] {
-  const g = 9.80665;
-  const cd = opts.cd ?? 0.5;
-  const area = opts.areaM2 ?? 0.01;
-  const rho = 1.225;
+// Pipeline + Observer
+export {
+  SimulationPipeline,
+  type SimProgressEvent,
+  type SimProgressListener,
+  type PipelineRunOptions,
+  type PipelineRunResult,
+} from './pipeline.js';
 
-  let t = 0;
-  let h = 0;
-  let v = 0;
-  const samples: SimSample[] = [{ t, altitude: h, velocity: v }];
+// Integrators
+export {
+  eulerStep,
+  integrateEuler1D,
+  eulerVerticalStep,
+} from './integrators/euler.js';
+export {
+  rk4Step,
+  integrateRk41D,
+  rk4VerticalStep,
+} from './integrators/rk4.js';
 
-  while (t < config.tMax && (h > 0 || t === 0)) {
-    const thrust = t < opts.burnTimeS ? opts.thrustN : 0;
-    // vertical: +up; drag opposes velocity
-    const dragForce =
-      v === 0 ? 0 : -Math.sign(v) * 0.5 * rho * v * v * cd * area;
-    const a = thrust / opts.massKg - g + dragForce / opts.massKg;
-    v += a * config.dt;
-    h += v * config.dt;
-    t += config.dt;
-    if (h < 0) {
-      h = 0;
-      v = 0;
-      samples.push({ t, altitude: h, velocity: v });
-      break;
-    }
-    samples.push({ t, altitude: h, velocity: v });
-  }
+// Built-in modules
+export {
+  massPropertiesModule,
+  type MassPropertiesInput,
+  type MassPropertiesData,
+} from './modules/mass-properties.js';
+export {
+  toyVerticalFlightModule,
+  simulateToyVertical,
+  type ToyVerticalFlightData,
+} from './modules/toy-vertical-flight.js';
 
-  return samples;
-}
+// Factory
+export {
+  createDefaultRegistry,
+  createDefaultPipeline,
+  DEFAULT_FREE_MODULE_IDS,
+} from './factory.js';
+
+// Runner (application facade)
+export {
+  SimulationRunner,
+  runDefaultSimulation,
+  type RunOptions,
+  type SimulationRunSummary,
+} from './runner.js';

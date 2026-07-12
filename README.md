@@ -24,36 +24,40 @@ Inspired by [OpenRocket](https://openrocket.info/) (open-source model rocket sim
 ```
 orbitlab/
 ├── apps/
-│   ├── web/           # React app — Netlify
-│   ├── desktop/       # Tauri/Electron shell (later)
-│   └── pocketbase/    # schema export, hooks notes (later)
+│   ├── web/                 # Presentation (Vite + React) — composition root
+│   └── pocketbase/          # pb_schema.json, API rules, seed notes
 ├── packages/
-│   ├── sim-core/      # Physics & numerics modules (TS → WASM)
-│   ├── schema/        # Shared types, rocket model JSON schema
-│   └── report/        # Step-by-step math → PDF/CSV
-├── docs/              # Product, architecture, math, roadmap
-└── scripts/
+│   ├── domain/              # Entities, VOs, ports, specifications
+│   ├── application/         # Use cases (SaveDesign, RunSimulation, …)
+│   ├── infrastructure/      # PocketBase repositories, mappers, auth
+│   ├── sim-core/            # Calc Strategy / Registry / Pipeline
+│   └── schema/              # Shared schema notes
+└── docs/
 ```
 
 ## Docs
 
 - [Product brief](docs/PRODUCT.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Clean Architecture & patterns](docs/CLEAN-ARCHITECTURE.md)
 - [How advanced math works](docs/MATH.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Licensing & OpenRocket](docs/LICENSING.md)
 - [Contributing](CONTRIBUTING.md)
 - [Feature matrix (free vs pro)](docs/FEATURE-MATRIX.md)
 
-## Quick start (scaffold)
+## Quick start
 
 ```bash
-# prerequisites: Node 20+
-cd apps/web
-# package manager bootstrap lands in Phase 1
+# prerequisites: Node 20+, pnpm 9+
+pnpm install
+pnpm test
+pnpm dev          # web app → http://localhost:5173
+pnpm typecheck
 ```
 
-This commit ships **documentation + empty package placeholders**. App scaffolding lands in the next PRs.
+Default DI uses **in-memory** repositories + local `sim-core` (no PocketBase required for UI demo).
+Swap to PocketBase adapters in `apps/web` composition root when the BaaS is running.
 
 ## Stack (locked for MVP)
 
