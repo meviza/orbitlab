@@ -8,6 +8,7 @@ import { useContainer, useLocale } from "../../app/providers";
 import { t } from "../../shared/i18n/messages";
 import { Button } from "../../shared/ui/Button";
 import { Card } from "../../shared/ui/Card";
+import { ModuleChipBar } from "./ModuleChipBar";
 import { useRunSimulation } from "./useRunSimulation";
 
 /** Interactive suite presets for free-tier runs. */
@@ -345,18 +346,10 @@ export function SimRunnerPanel() {
             </p>
           </div>
 
-          <div className="stack" style={{ gap: "0.4rem" }}>
-            <span className="muted" style={{ fontSize: "0.78rem" }}>
-              {t(locale, "simModules")}
-            </span>
-            <div className="chip-row" aria-live="polite">
-              {selectedModuleIds.map((id) => (
-                <span key={id} className="chip">
-                  {id}
-                </span>
-              ))}
-            </div>
-          </div>
+          <ModuleChipBar
+            title={t(locale, "simModules")}
+            moduleIds={selectedModuleIds}
+          />
 
           {active && (
             <p style={{ margin: 0, fontSize: "0.88rem" }}>

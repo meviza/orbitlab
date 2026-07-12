@@ -3,6 +3,10 @@ import { simpleDragModule } from './modules/simple-drag.js';
 import { stabilityBarrowmanModule } from './modules/stability-barrowman.js';
 import { stabilityMarginLiteModule } from './modules/stability-margin-lite.js';
 import { toyVerticalFlightModule } from './modules/toy-vertical-flight.js';
+import { motorThrustCurveModule } from './modules/motor-thrust-curve.js';
+import { atmosphereIsaModule } from './modules/atmosphere-isa.js';
+import { recoveryDeploySimpleModule } from './modules/recovery-deploy.js';
+import { windConstantModule } from './modules/wind-constant.js';
 import { SimulationPipeline } from './pipeline.js';
 import { ModuleRegistry } from './registry.js';
 
@@ -12,11 +16,14 @@ import { ModuleRegistry } from './registry.js';
 export function createDefaultRegistry(): ModuleRegistry {
   const registry = new ModuleRegistry();
   registry.register(massPropertiesModule);
+  registry.register(motorThrustCurveModule);
+  registry.register(atmosphereIsaModule);
   registry.register(stabilityBarrowmanModule);
-  // Optional lite estimator — still available, not in FULL_FREE by default
   registry.register(stabilityMarginLiteModule);
   registry.register(simpleDragModule);
+  registry.register(windConstantModule);
   registry.register(toyVerticalFlightModule);
+  registry.register(recoveryDeploySimpleModule);
   return registry;
 }
 
@@ -29,7 +36,6 @@ export function createDefaultPipeline(): SimulationPipeline {
 
 /**
  * Fast free-tier demo order: mass resolution + 1D flight only.
- * Prefer this for interactive previews and default UI runs.
  */
 export const DEFAULT_FREE_MODULE_IDS = [
   'mass.properties',
@@ -37,12 +43,16 @@ export const DEFAULT_FREE_MODULE_IDS = [
 ] as const;
 
 /**
- * Full free-tier suite: mass → Barrowman stability → aero → flight.
- * `stability.margin-lite` remains registered for hosts that opt in.
+ * Full free-tier educational suite (Wave-16 modules included).
+ * Order: mass → motor → atmosphere → stability → drag → wind → flight → recovery.
  */
 export const FULL_FREE_MODULE_IDS = [
   'mass.properties',
+  'motor.thrust-curve',
+  'aero.atmosphere-isa',
   'stability.barrowman',
   'aero.simple-drag',
+  'aero.wind-constant',
   'flight.toy-vertical',
+  'recovery.deploy-simple',
 ] as const;

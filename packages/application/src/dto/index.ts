@@ -17,3 +17,9 @@ export {
   type ReportDto,
   type ExportReportCommand,
 } from "./report-dto.js";
+
+export {
+  type ThrustSampleDto,
+  type ImportThrustCurveCommand,
+  type ThrustCurveDto,
+} from "./thrust-curve-dto.js";

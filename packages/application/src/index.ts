@@ -17,6 +17,9 @@ export {
   simRunToDto,
   type ReportDto,
   type ExportReportCommand,
+  type ThrustSampleDto,
+  type ImportThrustCurveCommand,
+  type ThrustCurveDto,
 } from "./dto/index.js";
 
 // Application ports
@@ -40,4 +43,7 @@ export {
   RunSimulationUseCase,
   type RunSimulationDeps,
   ExportReportUseCase,
+  ImportThrustCurveUseCase,
+  parseThrustCurveCsv,
+  trapezoidalImpulseNs,
 } from "./use-cases/index.js";

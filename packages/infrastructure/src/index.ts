@@ -30,6 +30,13 @@ export {
   PocketBaseUnitOfWork,
 } from "./pocketbase/repositories/index.js";
 
+export {
+  PocketBaseReportStorage,
+  buildReportPath,
+  buildReportUploadPath,
+  assertSafeRunId,
+} from "./pocketbase/repositories/PocketBaseReportStorage.js";
+
 export { SystemClock } from "./system/SystemClock.js";
 export { CryptoIdGenerator } from "./system/CryptoIdGenerator.js";
 

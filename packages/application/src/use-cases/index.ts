@@ -15,3 +15,8 @@ export {
   type RunSimulationDeps,
 } from "./run-simulation.js";
 export { ExportReportUseCase } from "./export-report.js";
+export {
+  ImportThrustCurveUseCase,
+  parseThrustCurveCsv,
+  trapezoidalImpulseNs,
+} from "./import-thrust-curve.js";

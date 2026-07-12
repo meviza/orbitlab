@@ -61,12 +61,16 @@ describe('free module id sets', () => {
     ]);
   });
 
-  it('FULL includes barrowman stability + aero in educational order', () => {
+  it('FULL includes wave-16 free suite in educational order', () => {
     assert.deepEqual([...FULL_FREE_MODULE_IDS], [
       'mass.properties',
+      'motor.thrust-curve',
+      'aero.atmosphere-isa',
       'stability.barrowman',
       'aero.simple-drag',
+      'aero.wind-constant',
       'flight.toy-vertical',
+      'recovery.deploy-simple',
     ]);
   });
 });
@@ -76,11 +80,15 @@ describe('FULL_FREE_MODULE_IDS pipeline integration', () => {
     const runner = new SimulationRunner();
     const summary = runner.run(design, [...FULL_FREE_MODULE_IDS]);
 
-    assert.equal(summary.ordered.length, 4);
+    assert.equal(summary.ordered.length, 8);
     assert.ok(summary.byId['mass.properties']);
+    assert.ok(summary.byId['motor.thrust-curve']);
+    assert.ok(summary.byId['aero.atmosphere-isa']);
     assert.ok(summary.byId['stability.barrowman']);
     assert.ok(summary.byId['aero.simple-drag']);
+    assert.ok(summary.byId['aero.wind-constant']);
     assert.ok(summary.byId['flight.toy-vertical']);
+    assert.ok(summary.byId['recovery.deploy-simple']);
 
     const mass = summary.byId['mass.properties']!.data as {
       totalMassKg: number;
@@ -111,20 +119,25 @@ describe('FULL_FREE_MODULE_IDS pipeline integration', () => {
     assert.ok(flight.samples.length > 10);
   });
 
-  it('registry registers all five free modules (barrowman + optional margin-lite)', () => {
+  it('registry registers wave-16 free modules + optional margin-lite', () => {
     const reg = createDefaultRegistry();
     const free = reg.listByTier('free');
     const ids = free.map((m) => m.id).sort();
     assert.deepEqual(ids, [
+      'aero.atmosphere-isa',
       'aero.simple-drag',
+      'aero.wind-constant',
       'flight.toy-vertical',
       'mass.properties',
+      'motor.thrust-curve',
+      'recovery.deploy-simple',
       'stability.barrowman',
       'stability.margin-lite',
     ]);
-    assert.equal(reg.size, 5);
+    assert.equal(reg.size, 9);
     assert.ok(reg.has('stability.margin-lite'));
     assert.ok(reg.has('stability.barrowman'));
+    assert.ok(reg.has('motor.thrust-curve'));
   });
 
   it('DEFAULT pipeline still only runs two modules', () => {

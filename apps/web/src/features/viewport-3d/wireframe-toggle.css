@@ -1,0 +1,57 @@
+/* WireframeToggle — dark segmented control (viewport render mode) */
+
+.wireframe-toggle {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.wireframe-toggle__label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.wireframe-toggle__group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+}
+
+.wireframe-toggle__btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.2;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.wireframe-toggle__btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.wireframe-toggle__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.wireframe-toggle__btn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.wireframe-toggle__btn[aria-pressed="true"]:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}

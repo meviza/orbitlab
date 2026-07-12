@@ -1,0 +1,114 @@
+/* Motor library panel — dark UI using OrbitLab CSS vars */
+
+.motor-lib-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.motor-lib-textarea:focus {
+  outline: none;
+  border-color: var(--accent-dim) !important;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.motor-lib-stat-value {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 0.15rem;
+  line-height: 1.2;
+}
+
+.motor-lib-msg {
+  margin: 0;
+  padding: 0.55rem 0.75rem 0.55rem 1.35rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.motor-lib-msg--error {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--danger);
+}
+
+.motor-lib-msg--warn {
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--warning);
+}
+
+.motor-lib-spark {
+  display: block;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.motor-lib-details {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.motor-lib-details summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.motor-lib-details summary:hover {
+  color: var(--accent);
+}
+
+.motor-lib-table-wrap {
+  margin-top: 0.5rem;
+  max-height: 200px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.motor-lib-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.motor-lib-table th,
+.motor-lib-table td {
+  padding: 0.35rem 0.55rem;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+.motor-lib-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-elevated);
+  color: var(--text-faint);
+  font-weight: 600;
+  text-align: right;
+}
+
+.motor-lib-table th:first-child,
+.motor-lib-table td:first-child {
+  text-align: left;
+  color: var(--text-faint);
+}
+
+.motor-lib-table tbody tr:hover td {
+  background: var(--bg-hover);
+}

@@ -28,6 +28,13 @@ export {
   toKilograms,
   toMetres,
   toNewtons,
+  assertPositiveLength,
+  assertNonNegative,
+  diameterToRadius,
+  radiusToDiameter,
+  circleArea,
+  cylinderVolume,
+  finPlanformArea,
 } from "./value-objects/index.js";
 
 // Entities

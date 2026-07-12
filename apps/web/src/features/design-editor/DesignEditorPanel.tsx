@@ -9,6 +9,8 @@ import {
 } from "react";
 import type { DesignDto } from "@orbitlab/application";
 import { useContainer, useLocale } from "../../app/providers";
+import { MotorLibraryPanel, type ThrustSample } from "../motor-library";
+import { WireframeToggle } from "../viewport-3d/WireframeToggle";
 import { t } from "../../shared/i18n/messages";
 import { Button } from "../../shared/ui/Button";
 import { Card } from "../../shared/ui/Card";
@@ -74,6 +76,8 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [wireframe, setWireframe] = useState(false);
+  const [thrustCurve, setThrustCurve] = useState<ThrustSample[] | null>(null);
 
   const applyDesign = useCallback((d: DesignDto) => {
     setDesignId(d.id);
@@ -193,6 +197,9 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
         burnTimeS,
         cd,
         areaM2,
+        ...(thrustCurve && thrustCurve.length > 0
+          ? { thrustCurve }
+          : {}),
       },
     });
 
@@ -446,6 +453,9 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
             flexDirection: "column",
           }}
         >
+          <div style={{ marginBottom: "0.5rem" }}>
+            <WireframeToggle checked={wireframe} onChange={setWireframe} />
+          </div>
           <Suspense
             fallback={
               <div
@@ -468,6 +478,7 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
           >
             <RocketViewport
               components={viewportComponents}
+              wireframe={wireframe}
               style={{ flex: 1, minHeight: 360 }}
             />
           </Suspense>
@@ -606,6 +617,23 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
           )}
         </div>
       </Card>
+
+      <div style={{ gridColumn: "1 / -1" }}>
+        <MotorLibraryPanel
+          onApplyCurve={(samples) => {
+            setThrustCurve(samples);
+            if (samples.length >= 2) {
+              const peak = Math.max(...samples.map((s) => s.n));
+              const burn = samples[samples.length - 1]!.t - samples[0]!.t;
+              if (peak > 0) setThrustN(peak);
+              if (burn > 0) setBurnTimeS(burn);
+            }
+            setStatus(
+              `Motor curve applied (${samples.length} samples). Save design to persist.`
+            );
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -21,3 +21,13 @@ export {
   toMetres,
   toNewtons,
 } from "./units.js";
+
+export {
+  assertPositiveLength,
+  assertNonNegative,
+  diameterToRadius,
+  radiusToDiameter,
+  circleArea,
+  cylinderVolume,
+  finPlanformArea,
+} from "./geometry.js";

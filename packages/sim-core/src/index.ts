@@ -91,6 +91,23 @@ export {
   simulateToyVertical,
   type ToyVerticalFlightData,
 } from './modules/toy-vertical-flight.js';
+export {
+  motorThrustCurveModule,
+  type MotorThrustCurveData,
+  type ThrustSample,
+} from './modules/motor-thrust-curve.js';
+export {
+  atmosphereIsaModule,
+  type AtmosphereIsaData,
+} from './modules/atmosphere-isa.js';
+export {
+  recoveryDeploySimpleModule,
+  type RecoveryDeployData,
+} from './modules/recovery-deploy.js';
+export {
+  windConstantModule,
+  type WindConstantData,
+} from './modules/wind-constant.js';
 
 // Factory
 export {
