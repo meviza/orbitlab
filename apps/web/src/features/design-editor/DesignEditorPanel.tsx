@@ -1,9 +1,26 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { DesignDto } from "@orbitlab/application";
 import { useContainer, useLocale } from "../../app/providers";
 import { t } from "../../shared/i18n/messages";
 import { Button } from "../../shared/ui/Button";
 import { Card } from "../../shared/ui/Card";
+
+const RocketViewport = lazy(() =>
+  import("../viewport-3d/RocketViewport").then((m) => ({
+    default: m.RocketViewport,
+  }))
+);
+
+const ACTIVE_DESIGN_KEY = "orbitlab.activeDesignId";
+const ACTIVE_DESIGN_META_KEY = "orbitlab.activeDesign";
 
 const CATALOG = [
   { id: "nose-cone", type: "nose", label: "Nose cone" },
@@ -14,41 +31,103 @@ const CATALOG = [
   { id: "transition", type: "other", label: "Transition" },
 ] as const;
 
+const DEFAULT_COMPONENT_IDS = [
+  "nose-cone",
+  "body-tube",
+  "fins",
+  "motor-mount",
+  "parachute",
+] as const;
+
+function catalogById(id: string) {
+  return CATALOG.find((c) => c.id === id);
+}
+
+function numMeta(
+  metadata: Readonly<Record<string, unknown>>,
+  key: string,
+  fallback: number
+): number {
+  const v = metadata[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
+}
+
 export interface DesignEditorPanelProps {
   onSaved?: (design: DesignDto) => void;
 }
 
 export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
-  const { saveDesign, listDesigns } = useContainer();
+  const { saveDesign, listDesigns, modeLabel } = useContainer();
   const { locale } = useLocale();
 
   const [title, setTitle] = useState("Demo Model A");
   const [componentIds, setComponentIds] = useState<string[]>([
-    "nose-cone",
-    "body-tube",
-    "fins",
-    "motor-mount",
-    "parachute",
+    ...DEFAULT_COMPONENT_IDS,
   ]);
   const [massKg, setMassKg] = useState(0.45);
   const [thrustN, setThrustN] = useState(18);
   const [burnTimeS, setBurnTimeS] = useState(1.2);
+  const [cd, setCd] = useState(0.5);
+  const [areaM2, setAreaM2] = useState(0.01);
   const [designId, setDesignId] = useState<string | undefined>("demo_model_a");
   const [designs, setDesigns] = useState<DesignDto[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
-  const refresh = useCallback(async () => {
+  const applyDesign = useCallback((d: DesignDto) => {
+    setDesignId(d.id);
+    setTitle(d.title);
+    setComponentIds(d.components.map((c) => c.id));
+    setMassKg(numMeta(d.metadata, "massKg", 0.45));
+    setThrustN(numMeta(d.metadata, "thrustN", 18));
+    setBurnTimeS(numMeta(d.metadata, "burnTimeS", 1.2));
+    setCd(numMeta(d.metadata, "cd", 0.5));
+    setAreaM2(numMeta(d.metadata, "areaM2", 0.01));
+    setStatus(null);
+    setError(null);
+    sessionStorage.setItem(ACTIVE_DESIGN_KEY, d.id);
+  }, []);
+
+  const refresh = useCallback(async (): Promise<DesignDto[]> => {
     const result = await listDesigns.execute();
     if (result.ok) {
-      setDesigns([...result.value]);
-    } else {
-      setError(result.error.message);
+      const list = [...result.value];
+      setDesigns(list);
+      return list;
     }
+    setError(result.error.message);
+    return [];
   }, [listDesigns]);
 
   useEffect(() => {
-    void refresh();
+    let cancelled = false;
+    void (async () => {
+      const list = await refresh();
+      if (cancelled || hydrated) return;
+
+      const stored = sessionStorage.getItem(ACTIVE_DESIGN_KEY);
+      if (stored) {
+        const match = list.find((d) => d.id === stored);
+        if (match) {
+          applyDesign(match);
+          setHydrated(true);
+          return;
+        }
+      }
+
+      // Keep seed defaults when memory seed is present
+      const seed = list.find((d) => d.id === "demo_model_a");
+      if (seed && designId === "demo_model_a") {
+        applyDesign(seed);
+      }
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Initial hydrate only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh]);
 
   function toggleComponent(id: string) {
@@ -57,35 +136,52 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
     );
   }
 
+  function moveComponent(id: string, direction: -1 | 1) {
+    setComponentIds((prev) => {
+      const idx = prev.indexOf(id);
+      if (idx < 0) return prev;
+      const next = idx + direction;
+      if (next < 0 || next >= prev.length) return prev;
+      const copy = [...prev];
+      const tmp = copy[idx]!;
+      copy[idx] = copy[next]!;
+      copy[next] = tmp;
+      return copy;
+    });
+  }
+
   function loadDesign(d: DesignDto) {
-    setDesignId(d.id);
-    setTitle(d.title);
-    setComponentIds(d.components.map((c) => c.id));
-    setMassKg(typeof d.metadata.massKg === "number" ? d.metadata.massKg : 0.45);
-    setThrustN(
-      typeof d.metadata.thrustN === "number" ? d.metadata.thrustN : 18
-    );
-    setBurnTimeS(
-      typeof d.metadata.burnTimeS === "number" ? d.metadata.burnTimeS : 1.2
-    );
+    applyDesign(d);
+  }
+
+  function handleNewDesign() {
+    setDesignId(undefined);
+    setTitle("Untitled");
+    setComponentIds([...DEFAULT_COMPONENT_IDS]);
+    setMassKg(0.45);
+    setThrustN(18);
+    setBurnTimeS(1.2);
+    setCd(0.5);
+    setAreaM2(0.01);
     setStatus(null);
     setError(null);
-    sessionStorage.setItem(
-      "orbitlab.activeDesignId",
-      d.id
-    );
+    sessionStorage.removeItem(ACTIVE_DESIGN_KEY);
+    sessionStorage.removeItem(ACTIVE_DESIGN_META_KEY);
   }
 
   async function handleSave() {
     setError(null);
-    const components = CATALOG.filter((c) => componentIds.includes(c.id)).map(
-      (c) => ({
+
+    // Preserve stack order from componentIds (not catalog order)
+    const components = componentIds
+      .map((id) => catalogById(id))
+      .filter((c): c is (typeof CATALOG)[number] => c != null)
+      .map((c) => ({
         id: c.id,
         type: c.type,
         name: c.label,
         params: {},
-      })
-    );
+      }));
 
     const result = await saveDesign.execute({
       id: designId,
@@ -95,8 +191,8 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
         massKg,
         thrustN,
         burnTimeS,
-        cd: 0.5,
-        areaM2: 0.01,
+        cd,
+        areaM2,
       },
     });
 
@@ -107,18 +203,26 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
 
     const saved = result.value;
     setDesignId(saved.id);
-    setStatus(t(locale, "editorSaved"));
+    setStatus(
+      `${t(locale, "editorSaved")} · ${t(locale, "editorDesignId")}: ${saved.id}`
+    );
     onSaved?.(saved);
+
+    // Refresh list (important in pocketbase mode) and keep selection
     await refresh();
-    sessionStorage.setItem("orbitlab.activeDesignId", saved.id);
+    setDesignId(saved.id);
+
+    sessionStorage.setItem(ACTIVE_DESIGN_KEY, saved.id);
     sessionStorage.setItem(
-      "orbitlab.activeDesign",
+      ACTIVE_DESIGN_META_KEY,
       JSON.stringify({
         id: saved.id,
         title: saved.title,
         massKg,
         thrustN,
         burnTimeS,
+        cd,
+        areaM2,
       })
     );
   }
@@ -139,23 +243,28 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
     marginBottom: "0.25rem",
   };
 
+  const iconBtnStyle: CSSProperties = {
+    padding: "0.15rem 0.4rem",
+    minWidth: "1.6rem",
+    fontSize: "0.75rem",
+    lineHeight: 1.2,
+  };
+
+  const viewportComponents = useMemo(
+    () =>
+      componentIds
+        .map((id) => catalogById(id))
+        .filter((c): c is (typeof CATALOG)[number] => c != null)
+        .map((c) => ({
+          id: c.id,
+          type: c.type,
+          name: c.label,
+        })),
+    [componentIds]
+  );
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "220px 1fr 260px",
-        gap: "0.85rem",
-        minHeight: 420,
-      }}
-      className="editor-grid"
-    >
-      <style>{`
-        @media (max-width: 900px) {
-          .editor-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+    <div className="editor-grid">
 
       <Card title={t(locale, "editorComponents")}>
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -188,15 +297,97 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
           })}
         </ul>
 
+        {componentIds.length > 0 && (
+          <div style={{ marginTop: "1rem" }}>
+            <div
+              style={{
+                fontSize: "0.78rem",
+                color: "var(--text-faint)",
+                marginBottom: "0.4rem",
+              }}
+            >
+              {t(locale, "editorSelectedOrder")}
+            </div>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {componentIds.map((id, index) => {
+                const item = catalogById(id);
+                const label = item?.label ?? id;
+                return (
+                  <li
+                    key={id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                      marginBottom: "0.3rem",
+                      padding: "0.3rem 0.4rem",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--border)",
+                      background: "var(--bg)",
+                      fontSize: "0.82rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {index + 1}. {label}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      style={iconBtnStyle}
+                      disabled={index === 0}
+                      aria-label={t(locale, "editorMoveUp")}
+                      title={t(locale, "editorMoveUp")}
+                      onClick={() => moveComponent(id, -1)}
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      style={iconBtnStyle}
+                      disabled={index === componentIds.length - 1}
+                      aria-label={t(locale, "editorMoveDown")}
+                      title={t(locale, "editorMoveDown")}
+                      onClick={() => moveComponent(id, 1)}
+                    >
+                      ↓
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         <div style={{ marginTop: "1rem" }}>
           <div
             style={{
               fontSize: "0.78rem",
               color: "var(--text-faint)",
               marginBottom: "0.4rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "0.5rem",
             }}
           >
-            {t(locale, "designs")}
+            <span>{t(locale, "designs")}</span>
+            <Button
+              variant="ghost"
+              type="button"
+              style={{ padding: "0.2rem 0.45rem", fontSize: "0.78rem" }}
+              onClick={handleNewDesign}
+            >
+              {t(locale, "editorNew")}
+            </Button>
           </div>
           {designs.length === 0 ? (
             <p className="faint" style={{ fontSize: "0.85rem", margin: 0 }}>
@@ -204,75 +395,141 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
             </p>
           ) : (
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-              {designs.map((d) => (
-                <li key={d.id} style={{ marginBottom: "0.3rem" }}>
-                  <Button
-                    variant="ghost"
-                    style={{
-                      width: "100%",
-                      justifyContent: "flex-start",
-                      padding: "0.3rem 0.4rem",
-                      fontWeight: 500,
-                    }}
-                    onClick={() => loadDesign(d)}
-                  >
-                    {t(locale, "loadDesign")}: {d.title}
-                  </Button>
-                </li>
-              ))}
+              {designs.map((d) => {
+                const active = d.id === designId;
+                return (
+                  <li key={d.id} style={{ marginBottom: "0.3rem" }}>
+                    <Button
+                      variant="ghost"
+                      style={{
+                        width: "100%",
+                        justifyContent: "flex-start",
+                        padding: "0.3rem 0.4rem",
+                        fontWeight: active ? 600 : 500,
+                        border: active
+                          ? "1px solid rgba(34, 211, 238, 0.35)"
+                          : "1px solid transparent",
+                        background: active
+                          ? "var(--accent-soft)"
+                          : "transparent",
+                        color: active ? "var(--accent)" : undefined,
+                      }}
+                      onClick={() => loadDesign(d)}
+                    >
+                      {t(locale, "loadDesign")}: {d.title}
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
       </Card>
 
       <Card
-        title="Viewport"
+        title={t(locale, "editorViewport")}
         bodyStyle={{
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          flexDirection: "column",
           minHeight: 360,
-          background:
-            "repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(36,48,65,0.5) 24px), repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(36,48,65,0.5) 24px), var(--bg)",
+          padding: "0.5rem",
+          background: "var(--bg)",
         }}
       >
         <div
+          id="rocket-viewport-slot"
           style={{
-            textAlign: "center",
-            padding: "1.5rem",
-            border: "1px dashed var(--border-strong)",
-            borderRadius: "var(--radius-md)",
-            background: "rgba(11, 15, 20, 0.75)",
-            maxWidth: 280,
+            width: "100%",
+            flex: 1,
+            minHeight: 360,
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <div
-            style={{
-              fontSize: "2rem",
-              marginBottom: "0.5rem",
-              color: "var(--accent)",
-            }}
+          <Suspense
+            fallback={
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 360,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--text-faint)",
+                  fontSize: "0.85rem",
+                  background: "#0b0f14",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                Loading 3D viewport…
+              </div>
+            }
           >
-            ⧉
-          </div>
-          <div style={{ fontWeight: 600, marginBottom: "0.35rem" }}>
-            {t(locale, "editorViewport")}
-          </div>
-          <p style={{ margin: 0, fontSize: "0.85rem" }}>
-            Components: {componentIds.length}
-          </p>
+            <RocketViewport
+              components={viewportComponents}
+              style={{ flex: 1, minHeight: 360 }}
+            />
+          </Suspense>
         </div>
       </Card>
 
       <Card
         title={t(locale, "editorProps")}
         action={
-          <Button variant="primary" onClick={() => void handleSave()}>
-            {t(locale, "editorSave")}
-          </Button>
+          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+            <Button variant="ghost" type="button" onClick={handleNewDesign}>
+              {t(locale, "editorNew")}
+            </Button>
+            <Button
+              variant="primary"
+              type="button"
+              onClick={() => void handleSave()}
+            >
+              {t(locale, "editorSave")}
+            </Button>
+          </div>
         }
       >
         <div className="stack">
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.4rem",
+              alignItems: "center",
+              marginBottom: "0.25rem",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "0.7rem",
+                letterSpacing: "0.04em",
+                padding: "0.2rem 0.45rem",
+                borderRadius: "999px",
+                border: "1px solid var(--border-strong)",
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+              }}
+              title={t(locale, "editorBackendMode")}
+            >
+              {modeLabel}
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "0.72rem",
+                color: "var(--text-faint)",
+                wordBreak: "break-all",
+              }}
+            >
+              {designId
+                ? `${t(locale, "editorDesignId")}: ${designId}`
+                : t(locale, "editorUnsaved")}
+            </span>
+          </div>
+
           <label>
             <span style={labelStyle}>{t(locale, "editorTitleLabel")}</span>
             <input
@@ -312,6 +569,28 @@ export function DesignEditorPanel({ onSaved }: DesignEditorPanelProps) {
               min="0"
               value={burnTimeS}
               onChange={(e) => setBurnTimeS(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            <span style={labelStyle}>{t(locale, "editorCd")}</span>
+            <input
+              style={fieldStyle}
+              type="number"
+              step="0.01"
+              min="0"
+              value={cd}
+              onChange={(e) => setCd(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            <span style={labelStyle}>{t(locale, "editorArea")}</span>
+            <input
+              style={fieldStyle}
+              type="number"
+              step="0.001"
+              min="0.0001"
+              value={areaM2}
+              onChange={(e) => setAreaM2(Number(e.target.value))}
             />
           </label>
 

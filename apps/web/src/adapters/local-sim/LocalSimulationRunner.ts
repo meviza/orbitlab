@@ -95,9 +95,13 @@ export class LocalSimulationRunner implements SimulationRunnerPort {
         velocity: s.velocity,
       })) ?? [];
 
+    // Store full ModuleResult envelope so ExportReport can render equation steps.
     const moduleOutputs: Record<string, unknown> = {};
     for (const [id, result] of pipelineResult.results) {
-      moduleOutputs[id] = result.data;
+      moduleOutputs[id] = {
+        data: result.data,
+        steps: result.steps,
+      };
     }
 
     const summary = {

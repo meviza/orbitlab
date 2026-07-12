@@ -150,3 +150,22 @@ code {
     grid-template-columns: 1fr;
   }
 }
+
+/* Design editor: palette | 3D viewport | params */
+.editor-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 280px;
+  gap: 0.85rem;
+  min-height: 420px;
+  align-items: stretch;
+}
+
+.editor-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+}

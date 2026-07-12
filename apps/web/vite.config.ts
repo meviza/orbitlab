@@ -26,6 +26,10 @@ export default defineConfig({
         rootDir,
         "../../packages/infrastructure/src/index.ts"
       ),
+      "@orbitlab/report": path.resolve(
+        rootDir,
+        "../../packages/report/src/index.ts"
+      ),
     },
   },
   server: {

@@ -13,14 +13,15 @@ Phased so the product ships value early without boiling the ocean.
 ## Phase 1 — Web MVP (target: first usable demo)
 
 - [x] `apps/web` scaffold (React + dark theme)
-- [ ] 3D viewport (placeholder rocket + camera) — placeholder only today
-- [x] Component list panel (palette polish later)
+- [x] 3D viewport (Three.js rocket stack + orbit controls)
+- [x] Component list panel + stack reorder + Cd/area fields
 - [x] Manual design params via design metadata (mass, Cd, thrust…)
 - [x] 3DOF vertical / simple ballistic sim in `sim-core`
 - [x] Charts (altitude samples + SVG)
-- [ ] Optional report: short Markdown/PDF + CSV export
+- [x] Report: Markdown + CSV download + step traces (`@orbitlab/report`)
 - [x] TR/EN strings baseline
-- [ ] Netlify deploy
+- [x] Netlify + GitHub Actions CI config (deploy when site linked)
+- [ ] PDF print polish / KaTeX render
 
 ## Phase 2 — OpenRocket-class depth (free tier)
 

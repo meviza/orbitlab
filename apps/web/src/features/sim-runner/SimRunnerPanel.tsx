@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DesignDto } from "@orbitlab/application";
+import type { DesignDto, ReportDto, SimRunResultDto } from "@orbitlab/application";
 import { useContainer, useLocale } from "../../app/providers";
 import { t } from "../../shared/i18n/messages";
 import { Button } from "../../shared/ui/Button";
@@ -81,12 +81,42 @@ function sampleNumber(
   return typeof v === "number" ? v : 0;
 }
 
+function downloadTextFile(
+  content: string,
+  filename: string,
+  mime: string
+): void {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function slugify(title: string): string {
+  const s = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return s || "orbitlab-report";
+}
+
 export function SimRunnerPanel() {
   const { locale } = useLocale();
-  const { listDesigns } = useContainer();
+  const { listDesigns, exportReport } = useContainer();
   const { result, loading, error, run } = useRunSimulation();
   const [designs, setDesigns] = useState<DesignDto[]>([]);
   const [designId, setDesignId] = useState<string>("demo_model_a");
+  const [report, setReport] = useState<ReportDto | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -103,11 +133,71 @@ export function SimRunnerPanel() {
     })();
   }, [listDesigns]);
 
+  // Rebuild report whenever a new sim result arrives.
+  useEffect(() => {
+    if (!result) {
+      setReport(null);
+      setReportOpen(false);
+      setExportError(null);
+      return;
+    }
+    const activeDesign = designs.find((d) => d.id === result.designId);
+    void buildReportFromRun(result, activeDesign?.title);
+  }, [result, designs, exportReport]);
+
+  async function buildReportFromRun(
+    runResult: SimRunResultDto,
+    designTitle?: string
+  ): Promise<ReportDto | null> {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const outcome = await exportReport.execute({
+        run: runResult,
+        designTitle,
+        includeFullSteps: true,
+      });
+      if (!outcome.ok) {
+        setExportError(outcome.error.message);
+        setReport(null);
+        return null;
+      }
+      setReport(outcome.value);
+      return outcome.value;
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : String(e));
+      setReport(null);
+      return null;
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const active = designs.find((d) => d.id === designId) ?? designs[0];
 
   async function handleRun() {
     if (!designId) return;
     await run(designId);
+  }
+
+  async function handleDownload(kind: "csv" | "markdown") {
+    if (!result) return;
+    let current = report;
+    if (!current) {
+      current = await buildReportFromRun(result, active?.title);
+    }
+    if (!current) return;
+
+    const base = slugify(current.title);
+    if (kind === "csv") {
+      downloadTextFile(current.csv, `${base}.csv`, "text/csv;charset=utf-8");
+    } else {
+      downloadTextFile(
+        current.markdown,
+        `${base}.md`,
+        "text/markdown;charset=utf-8"
+      );
+    }
   }
 
   const chartSamples = useMemo(() => {
@@ -277,6 +367,73 @@ export function SimRunnerPanel() {
                 </tbody>
               </table>
             </div>
+          </Card>
+
+          <Card
+            title={t(locale, "simReportPreview")}
+            action={
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <Button
+                  variant="ghost"
+                  disabled={exporting || !report}
+                  onClick={() => void handleDownload("csv")}
+                >
+                  {t(locale, "simExportCsv")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={exporting || !report}
+                  onClick={() => void handleDownload("markdown")}
+                >
+                  {t(locale, "simExportMd")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={!report}
+                  onClick={() => setReportOpen((o) => !o)}
+                >
+                  {reportOpen
+                    ? t(locale, "simReportHide")
+                    : t(locale, "simReportShow")}
+                </Button>
+              </div>
+            }
+          >
+            {exportError && (
+              <p style={{ color: "var(--danger)", margin: 0 }}>
+                {t(locale, "simExportError")}: {exportError}
+              </p>
+            )}
+            {!exportError && !report && (
+              <p className="muted" style={{ margin: 0 }}>
+                {exporting ? t(locale, "simRunning") : "…"}
+              </p>
+            )}
+            {report && !reportOpen && (
+              <p className="muted" style={{ margin: 0, fontSize: "0.88rem" }}>
+                {report.title} · {report.generatedAt}
+              </p>
+            )}
+            {report && reportOpen && (
+              <pre
+                style={{
+                  margin: 0,
+                  maxHeight: 420,
+                  overflow: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  fontFamily: "var(--mono)",
+                  fontSize: "0.78rem",
+                  lineHeight: 1.45,
+                  background: "var(--bg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "0.75rem",
+                }}
+              >
+                {report.markdown}
+              </pre>
+            )}
           </Card>
         </>
       ) : (

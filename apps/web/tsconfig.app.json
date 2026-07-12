@@ -22,7 +22,8 @@
     "paths": {
       "@orbitlab/domain": ["../../packages/domain/src/index.ts"],
       "@orbitlab/application": ["../../packages/application/src/index.ts"],
-      "@orbitlab/infrastructure": ["../../packages/infrastructure/src/index.ts"]
+      "@orbitlab/infrastructure": ["../../packages/infrastructure/src/index.ts"],
+      "@orbitlab/report": ["../../packages/report/src/index.ts"]
     }
   },
   "include": ["src"]

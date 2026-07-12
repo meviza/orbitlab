@@ -15,15 +15,18 @@
     "@orbitlab/application": "workspace:*",
     "@orbitlab/domain": "workspace:*",
     "@orbitlab/infrastructure": "workspace:*",
+    "@orbitlab/report": "workspace:*",
     "@orbitlab/sim-core": "workspace:*",
     "pocketbase": "^0.25.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@types/three": "^0.185.1",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
     "vite": "^6.0.6"

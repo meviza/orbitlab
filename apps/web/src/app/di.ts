@@ -8,6 +8,7 @@
  */
 
 import {
+  ExportReportUseCase,
   ListDesignsUseCase,
   RunSimulationUseCase,
   SaveDesignUseCase,
@@ -70,6 +71,7 @@ export interface AppContainer {
   saveDesign: SaveDesignUseCase;
   listDesigns: ListDesignsUseCase;
   runSimulation: RunSimulationUseCase;
+  exportReport: ExportReportUseCase;
   defaultModuleIds: readonly string[];
   health: ContainerHealth;
 }
@@ -167,7 +169,10 @@ function wireUseCases(deps: {
   entitlements: FreePlanEntitlements | PlanBasedEntitlements;
   moduleTiers: FreeModuleTierLookup;
   runner: LocalSimulationRunner;
-}): Pick<AppContainer, "saveDesign" | "listDesigns" | "runSimulation"> {
+}): Pick<
+  AppContainer,
+  "saveDesign" | "listDesigns" | "runSimulation" | "exportReport"
+> {
   const saveDesign = new SaveDesignUseCase({
     designs: deps.designs,
     auth: deps.auth,
@@ -191,7 +196,9 @@ function wireUseCases(deps: {
     clock: deps.clock,
   });
 
-  return { saveDesign, listDesigns, runSimulation };
+  const exportReport = new ExportReportUseCase();
+
+  return { saveDesign, listDesigns, runSimulation, exportReport };
 }
 
 // ---------------------------------------------------------------------------

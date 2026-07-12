@@ -1,0 +1,18 @@
+# OrbitLab — Netlify static deploy for apps/web (Vite SPA monorepo)
+# Site must use the monorepo root as the base directory.
+
+[build]
+  base = "."
+  command = "pnpm install --frozen-lockfile && pnpm --filter @orbitlab/web build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Static demo: offline guest + in-memory repos (no PocketBase host/CORS yet)
+  VITE_DATA_BACKEND = "memory"
+
+# SPA fallback for client-side routing (React Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

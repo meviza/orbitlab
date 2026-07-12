@@ -1,8 +1,8 @@
 {
-  "name": "@orbitlab/application",
+  "name": "@orbitlab/report",
   "version": "0.1.0",
   "private": true,
-  "description": "OrbitLab application layer — use cases and DTOs",
+  "description": "OrbitLab educational report engine — Markdown / CSV / HTML from module traces",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -21,9 +21,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test src/**/*.test.ts"
   },
-  "dependencies": {
-    "@orbitlab/domain": "workspace:*",
-    "@orbitlab/report": "workspace:*"
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "tsx": "^4.19.2",
