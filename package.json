@@ -1,0 +1,17 @@
+{
+  "name": "orbitlab",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Web-first 3D rocket design, simulation, and education platform",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/meviza/orbitlab.git"
+  },
+  "scripts": {
+    "check:docs": "node -e \"require('fs').accessSync('docs/PRODUCT.md')\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

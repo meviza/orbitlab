@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build
+dist/
+build/
+.next/
+.out/
+.turbo/
+coverage/
+*.wasm
+!packages/**/fixtures/**
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.log
+
+# desktop
+apps/desktop/src-tauri/target/
+
+# local data
+*.local.db
+.tmp/
+.cache/
