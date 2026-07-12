@@ -14,6 +14,9 @@
     "dev": "pnpm --filter @orbitlab/web dev",
     "test": "pnpm -r --if-present run test",
     "typecheck": "pnpm -r --if-present run typecheck",
+    "pb:download": "pnpm --filter @orbitlab/pocketbase download",
+    "pb:serve": "pnpm --filter @orbitlab/pocketbase serve",
+    "pb:import": "pnpm --filter @orbitlab/pocketbase import-schema",
     "check:docs": "node -e \"require('fs').accessSync('docs/PRODUCT.md')\""
   },
   "engines": {

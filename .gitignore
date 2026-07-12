@@ -31,3 +31,4 @@ apps/desktop/src-tauri/target/
 *.local.db
 .tmp/
 .cache/
+*.tsbuildinfo

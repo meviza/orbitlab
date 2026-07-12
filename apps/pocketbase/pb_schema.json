@@ -1,6 +1,6 @@
 [
   {
-    "id": "olusersauth0001",
+    "id": "_pb_users_auth_",
     "name": "users",
     "type": "auth",
     "system": false,
@@ -152,8 +152,8 @@
       }
     ],
     "indexes": [
-      "CREATE UNIQUE INDEX `idx_tokenKey_olusersauth0001` ON `users` (`tokenKey`)",
-      "CREATE UNIQUE INDEX `idx_email_olusersauth0001` ON `users` (`email`) WHERE `email` != ''"
+      "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+      "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
     ]
   },
   {
@@ -203,7 +203,7 @@
         "required": true,
         "hidden": false,
         "presentable": false,
-        "collectionId": "olusersauth0001",
+        "collectionId": "_pb_users_auth_",
         "cascadeDelete": true,
         "minSelect": null,
         "maxSelect": 1,
@@ -302,7 +302,7 @@
         "required": true,
         "hidden": false,
         "presentable": false,
-        "collectionId": "olusersauth0001",
+        "collectionId": "_pb_users_auth_",
         "cascadeDelete": true,
         "minSelect": null,
         "maxSelect": 1,
@@ -399,7 +399,7 @@
         "required": true,
         "hidden": false,
         "presentable": false,
-        "collectionId": "olusersauth0001",
+        "collectionId": "_pb_users_auth_",
         "cascadeDelete": true,
         "minSelect": null,
         "maxSelect": 1,

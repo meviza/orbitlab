@@ -40,6 +40,7 @@ orbitlab/
 - [Product brief](docs/PRODUCT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Clean Architecture & patterns](docs/CLEAN-ARCHITECTURE.md)
+- [Parallel agent quality workflow](docs/PARALLEL-WORK.md)
 - [How advanced math works](docs/MATH.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Licensing & OpenRocket](docs/LICENSING.md)
@@ -52,12 +53,42 @@ orbitlab/
 # prerequisites: Node 20+, pnpm 9+
 pnpm install
 pnpm test
-pnpm dev          # web app → http://localhost:5173
 pnpm typecheck
+pnpm dev          # web → http://localhost:5173 (MEMORY backend by default)
 ```
 
-Default DI uses **in-memory** repositories + local `sim-core` (no PocketBase required for UI demo).
-Swap to PocketBase adapters in `apps/web` composition root when the BaaS is running.
+### Local PocketBase (optional)
+
+```bash
+pnpm pb:download
+pnpm pb:serve
+# other terminal — create admin once, then:
+# export PB_ADMIN_EMAIL=... PB_ADMIN_PASSWORD=...
+pnpm pb:import
+```
+
+Then in `apps/web/.env`:
+
+```bash
+VITE_DATA_BACKEND=pocketbase
+VITE_POCKETBASE_URL=http://127.0.0.1:8090
+```
+
+Restart `pnpm dev`. Header badge shows **MEMORY** or **POCKETBASE**.
+
+Default remains **in-memory** so the UI demo works offline without BaaS.
+
+### Local PocketBase (optional)
+
+```bash
+pnpm pb:download   # macOS arm64/amd64 auto-detect → apps/pocketbase/bin/
+pnpm pb:serve      # http://127.0.0.1:8090  (Admin: /_/)
+# create superuser, then:
+#   export PB_ADMIN_EMAIL=... PB_ADMIN_PASSWORD=...
+pnpm pb:import     # loads apps/pocketbase/pb_schema.json
+```
+
+Web client URL: set `VITE_POCKETBASE_URL=http://127.0.0.1:8090` (see `apps/pocketbase/README.md` for Docker and full flow).
 
 ## Stack (locked for MVP)
 

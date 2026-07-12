@@ -1,0 +1,19 @@
+{
+  "name": "@orbitlab/pocketbase",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OrbitLab local PocketBase binary, schema import, and Docker helpers",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "download": "bash ./scripts/download.sh",
+    "serve": "bash ./scripts/serve.sh",
+    "import-schema": "node ./scripts/import-schema.mjs"
+  },
+  "dependencies": {
+    "pocketbase": "^0.25.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

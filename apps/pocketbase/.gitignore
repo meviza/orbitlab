@@ -1,0 +1,11 @@
+# Local PocketBase binary downloads
+/bin/
+*.zip
+
+# SQLite data + uploaded files (never commit)
+/pb_data/
+
+# Local secrets
+.env
+.env.local
+.env.*.local

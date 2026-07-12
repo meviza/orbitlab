@@ -12,20 +12,21 @@ Phased so the product ships value early without boiling the ocean.
 
 ## Phase 1 — Web MVP (target: first usable demo)
 
-- [ ] `apps/web` scaffold (React + dark theme)
-- [ ] 3D viewport (placeholder rocket + camera)
-- [ ] Component list → simple drag-drop or palette add
-- [ ] Manual design params (mass, Cd, motor thrust table minimal)
-- [ ] 3DOF vertical / simple ballistic sim in `sim-core`
-- [ ] Charts (altitude, velocity vs time)
+- [x] `apps/web` scaffold (React + dark theme)
+- [ ] 3D viewport (placeholder rocket + camera) — placeholder only today
+- [x] Component list panel (palette polish later)
+- [x] Manual design params via design metadata (mass, Cd, thrust…)
+- [x] 3DOF vertical / simple ballistic sim in `sim-core`
+- [x] Charts (altitude samples + SVG)
 - [ ] Optional report: short Markdown/PDF + CSV export
-- [ ] TR/EN strings baseline
+- [x] TR/EN strings baseline
 - [ ] Netlify deploy
 
 ## Phase 2 — OpenRocket-class depth (free tier)
 
 - [ ] Component library (nose, body tubes, fins, transitions, motors, recovery)
-- [ ] Mass properties + stability (Barrowman-class baseline)
+- [x] Mass properties + **lite** stability + simple drag modules (+ golden tests)
+- [ ] Full Barrowman-class CP baseline
 - [ ] Motor database import (public thrust curves)
 - [ ] Multi-stage / events (deploy) basic
 - [ ] Project save/load (local + account later)
@@ -33,12 +34,13 @@ Phased so the product ships value early without boiling the ocean.
 
 ## Phase 3 — SaaS shell (PocketBase)
 
-- [ ] PocketBase self-host + collections (users, designs, sim_runs, files)
-- [ ] Auth (signup/login) via PocketBase SDK
-- [ ] Plans: free / pro / edu verification stub on user record
-- [ ] File storage for PDF/CSV/thrust curves
-- [ ] Ops admin: PocketBase Admin UI + optional product admin views
-- [ ] Entitlement gates in UI (and API rules)
+- [x] PocketBase local tooling (`pnpm pb:download|serve|import`) + schema/rules
+- [x] Dual-mode DI: memory (default) | pocketbase
+- [x] Auth adapters (guest memory / PB sign-in)
+- [x] Plan entitlement gates in use cases + specs (unit tested)
+- [ ] File storage for PDF/CSV/thrust curves (adapter exists; product flow TBD)
+- [ ] Ops admin: PocketBase Admin UI workflow verified on fresh Mac
+- [ ] Cloud host PocketBase (Render/Fly)
 
 ## Phase 4 — Pro physics & desktop
 

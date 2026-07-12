@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { useContainer } from "../../app/providers";
+import type { RouteId } from "../../app/router";
 import type { Locale } from "../i18n/messages";
 import { t } from "../i18n/messages";
-import type { RouteId } from "../../app/router";
 import { Button } from "./Button";
 
 export interface LayoutProps {
@@ -25,6 +26,9 @@ export function Layout({
   onToggleLocale,
   children,
 }: LayoutProps) {
+  const { modeLabel, backend } = useContainer();
+  const isPb = backend === "pocketbase";
+
   return (
     <div
       style={{
@@ -108,9 +112,36 @@ export function Layout({
           </nav>
         </div>
 
-        <Button variant="secondary" onClick={onToggleLocale}>
-          {t(locale, "langToggle")}
-        </Button>
+        <div className="row" style={{ gap: "0.65rem" }}>
+          <span
+            title={
+              isPb
+                ? "Data backend: PocketBase (VITE_DATA_BACKEND=pocketbase)"
+                : "Data backend: in-memory (default)"
+            }
+            style={{
+              fontFamily: "var(--mono)",
+              fontSize: "0.68rem",
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              padding: "0.28rem 0.55rem",
+              borderRadius: "999px",
+              border: isPb
+                ? "1px solid rgba(201, 123, 74, 0.45)"
+                : "1px solid rgba(34, 211, 238, 0.35)",
+              color: isPb ? "var(--copper)" : "var(--accent)",
+              background: isPb
+                ? "var(--copper-soft)"
+                : "var(--accent-soft)",
+              userSelect: "none",
+            }}
+          >
+            {modeLabel}
+          </span>
+          <Button variant="secondary" onClick={onToggleLocale}>
+            {t(locale, "langToggle")}
+          </Button>
+        </div>
       </header>
 
       <main

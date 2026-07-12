@@ -1,4 +1,4 @@
-import { useLocale } from "../app/providers";
+import { useContainer, useLocale } from "../app/providers";
 import type { RouteId } from "../app/router";
 import { AuthPanel } from "../features/auth/AuthPanel";
 import { t } from "../shared/i18n/messages";
@@ -7,6 +7,7 @@ import { Card } from "../shared/ui/Card";
 
 export function HomePage({ onNavigate }: { onNavigate: (r: RouteId) => void }) {
   const { locale } = useLocale();
+  const { backend, pbUrl, modeLabel } = useContainer();
 
   const features = [
     t(locale, "homeF1"),
@@ -83,6 +84,42 @@ export function HomePage({ onNavigate }: { onNavigate: (r: RouteId) => void }) {
             </li>
           ))}
         </ul>
+      </Card>
+
+      <Card title={t(locale, "backendTitle")}>
+        <p style={{ margin: "0 0 0.5rem", fontSize: "0.9rem" }}>
+          {t(locale, "backendActive")}:{" "}
+          <strong style={{ fontFamily: "var(--mono)" }}>{modeLabel}</strong>
+          {backend === "pocketbase" && pbUrl ? (
+            <span className="faint"> · {pbUrl}</span>
+          ) : null}
+        </p>
+        <p
+          style={{
+            margin: 0,
+            fontSize: "0.88rem",
+            color: "var(--text-muted)",
+            lineHeight: 1.55,
+          }}
+        >
+          {t(locale, "backendHowTo")}
+        </p>
+        <pre
+          style={{
+            margin: "0.75rem 0 0",
+            padding: "0.75rem 0.9rem",
+            background: "var(--bg)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
+            fontFamily: "var(--mono)",
+            fontSize: "0.78rem",
+            color: "var(--text-muted)",
+            overflowX: "auto",
+          }}
+        >{`# apps/web/.env
+VITE_DATA_BACKEND=memory          # default — offline demo
+# VITE_DATA_BACKEND=pocketbase
+# VITE_POCKETBASE_URL=http://127.0.0.1:8090`}</pre>
       </Card>
     </div>
   );

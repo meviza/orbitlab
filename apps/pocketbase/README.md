@@ -6,9 +6,10 @@ Schema source of truth in this folder:
 
 | File | Purpose |
 |------|---------|
-| [`pb_schema.json`](./pb_schema.json) | Importable collections export |
+| [`pb_schema.json`](./pb_schema.json) | Importable collections export (PB ≥ 0.22 `fields` format) |
 | [`rules.md`](./rules.md) | Human-readable API rule policy |
 | [`seed.md`](./seed.md) | Admin + demo user seed notes |
+| [`docker-compose.yml`](./docker-compose.yml) | Docker alternative to the local binary |
 
 ## Collections (enterprise sketch)
 
@@ -22,94 +23,174 @@ Schema source of truth in this folder:
 
 Math does **not** run inside PocketBase — see `docs/MATH.md` and `@orbitlab/sim-core`.
 
-## Prerequisites
+---
 
-- PocketBase binary ≥ **0.22** (fields-based schema; tested mentally against 0.25 API docs)
-- Download: <https://pocketbase.io/docs/>
+## Mac local flow (recommended)
 
-```bash
-# Example macOS arm64 (adjust version/arch)
-curl -L -o pocketbase.zip \
-  https://github.com/pocketbase/pocketbase/releases/download/v0.25.8/pocketbase_0.25.8_darwin_arm64.zip
-unzip pocketbase.zip -d ./bin
-chmod +x ./bin/pocketbase
-```
+**Prerequisites:** Node 20+, pnpm 9+, `curl`, `unzip`.
 
-## Run locally
-
-From this directory (or any data dir you prefer):
+From the monorepo root:
 
 ```bash
-mkdir -p pb_data
-./bin/pocketbase serve --dir=./pb_data --http=127.0.0.1:8090
+pnpm install
+
+# 1) Download pinned PocketBase into apps/pocketbase/bin/
+pnpm pb:download
+# equivalent: pnpm --filter @orbitlab/pocketbase download
+
+# 2) Start (http://127.0.0.1:8090)
+pnpm pb:serve
+
+# 3) In another terminal — create superuser (first time only)
+cd apps/pocketbase
+./bin/pocketbase superuser upsert admin@orbitlab.local 'CHANGE_ME_ADMIN_PASSWORD'
+
+# 4) Import collections
+export PB_ADMIN_EMAIL=admin@orbitlab.local
+export PB_ADMIN_PASSWORD='CHANGE_ME_ADMIN_PASSWORD'
+pnpm pb:import
 ```
 
-- API / SPA origin: `http://127.0.0.1:8090`
+Or work only inside this package:
+
+```bash
+cd apps/pocketbase
+pnpm download
+pnpm serve
+# … superuser upsert …
+pnpm import-schema
+```
+
+| Script | What it does |
+|--------|----------------|
+| `pnpm download` | Fetches PocketBase **v0.25.8** (override with `PB_VERSION`) for current OS/arch → `./bin/pocketbase` |
+| `pnpm serve` | Runs `./bin/pocketbase serve --dir=./pb_data --http=127.0.0.1:8090` |
+| `pnpm import-schema` | Imports `pb_schema.json` via JS SDK (`collections.import`) |
+
+### Architecture notes (macOS)
+
+| Chip | Download target |
+|------|-----------------|
+| Apple Silicon (M1–M4) | `darwin_arm64` (auto-detected) |
+| Intel Mac | `darwin_amd64` (auto-detected) |
+
+```bash
+# force re-download
+PB_FORCE=1 pnpm download
+
+# pin / change version
+PB_VERSION=0.25.8 pnpm download
+PB_VERSION=latest pnpm download
+
+# custom bind address
+PB_HTTP=127.0.0.1:8090 pnpm serve
+```
+
+- API: `http://127.0.0.1:8090`
 - Admin UI: `http://127.0.0.1:8090/_/`
 
-Create the first superuser when prompted (or `superuser upsert` — see [seed.md](./seed.md)).
+If the binary is missing, `serve` exits with a clear error pointing at `pnpm download`.
 
-## Import schema
+---
 
-### Admin UI
+## Docker flow (alternative)
 
-1. Open Admin → **Settings** → **Import collections** (wording may be “Import/Export”).
-2. Paste or upload `pb_schema.json`.
-3. Prefer **merge** / `deleteMissing=false` so you do not wipe unrelated collections.
-4. Confirm `users` gains `plan`, `edu_verified`, `display_name` and base collections appear.
+```bash
+cd apps/pocketbase
 
-### API (superuser)
+# optional: superuser bootstrap via compose env
+export PB_ADMIN_EMAIL=admin@orbitlab.local
+export PB_ADMIN_PASSWORD='CHANGE_ME_ADMIN_PASSWORD'
 
-```js
-import PocketBase from "pocketbase";
-import schema from "./pb_schema.json" with { type: "json" };
+docker compose up -d
+# → http://127.0.0.1:8090/_/
 
-const pb = new PocketBase("http://127.0.0.1:8090");
-await pb.collection("_superusers").authWithPassword(
-  process.env.PB_ADMIN_EMAIL,
-  process.env.PB_ADMIN_PASSWORD
-);
+# import schema from the host (needs Node deps from pnpm install)
+export POCKETBASE_URL=http://127.0.0.1:8090
+pnpm import-schema
 
-// false = do not delete collections/fields missing from import
-await pb.collections.import(schema, false);
+docker compose down          # stop
+docker compose down -v       # stop (does not remove ./pb_data bind mount)
 ```
 
-If import complains about the existing default `users` collection id, import base collections first or align ids in Admin export and re-export into this file.
+Data persists in `./pb_data` (gitignored). Image: [`ghcr.io/muchobien/pocketbase`](https://github.com/muchobien/pocketbase-docker).
 
-## Environment variables
+---
 
-| Variable | Used by | Example |
-|----------|---------|---------|
-| `VITE_POCKETBASE_URL` | `apps/web` | `http://127.0.0.1:8090` |
-| `POCKETBASE_URL` | server scripts / CI | `http://127.0.0.1:8090` |
-| `PB_ADMIN_EMAIL` | schema import scripts | `admin@orbitlab.local` |
-| `PB_ADMIN_PASSWORD` | schema import scripts | *(secret)* |
-| `PB_DATA_DIR` | process wrapper | `./pb_data` |
+## Web app wiring
 
-Never expose superuser credentials to the browser bundle.
+The Vite app reads the BaaS URL from:
 
-## Wiring TypeScript adapters
+```bash
+# apps/web/.env (or shell when starting Vite)
+VITE_POCKETBASE_URL=http://127.0.0.1:8090
+```
+
+Default web DI still uses **in-memory** adapters for a no-backend demo. Point composition root at `@orbitlab/infrastructure` PocketBase repositories when this server is up.
 
 ```ts
 import {
   createPocketBaseClient,
   PocketBaseDesignRepository,
   PocketBaseAuthAdapter,
-  SystemClock,
-  CryptoIdGenerator,
 } from "@orbitlab/infrastructure";
 
 const pb = await createPocketBaseClient(
   import.meta.env.VITE_POCKETBASE_URL
 );
-
-const designs = new PocketBaseDesignRepository(pb);
-const auth = new PocketBaseAuthAdapter(pb);
-const clock = new SystemClock();
-const ids = new CryptoIdGenerator();
 ```
 
-Requires optional peer `pocketbase` in the host app, or inject any `PbLike` client.
+Never put `PB_ADMIN_*` in the browser bundle.
+
+---
+
+## Import schema details
+
+### CLI (preferred)
+
+```bash
+export PB_ADMIN_EMAIL=admin@orbitlab.local
+export PB_ADMIN_PASSWORD='…'
+# optional: POCKETBASE_URL=http://127.0.0.1:8090
+pnpm import-schema
+```
+
+Uses PocketBase JS SDK:
+
+```js
+await pb.collection("_superusers").authWithPassword(email, password);
+await pb.collections.import(schema, false); // deleteMissing = false
+```
+
+Compatible with PocketBase **0.22+** (fields-based collections). Default `deleteMissing=false` merges without wiping unrelated collections. Set `PB_DELETE_MISSING=true` only when you intend destructive sync.
+
+### Admin UI
+
+1. Open Admin → **Settings** → **Import collections**.
+2. Paste or upload `pb_schema.json`.
+3. Prefer **merge** / do not delete missing.
+4. Confirm `users` gains `plan`, `edu_verified`, `display_name` and base collections appear.
+
+If import complains about the existing default `users` collection id, import base collections first or align ids via Admin export and re-export into this file.
+
+---
+
+## Environment variables
+
+| Variable | Used by | Example |
+|----------|---------|---------|
+| `VITE_POCKETBASE_URL` | `apps/web` | `http://127.0.0.1:8090` |
+| `POCKETBASE_URL` | import script / CI | `http://127.0.0.1:8090` |
+| `PB_ADMIN_EMAIL` | import + Docker bootstrap | `admin@orbitlab.local` |
+| `PB_ADMIN_PASSWORD` | import + Docker bootstrap | *(secret)* |
+| `PB_HTTP` | `serve` bind host:port | `127.0.0.1:8090` |
+| `PB_DATA_DIR` | `serve` data path | `./pb_data` |
+| `PB_VERSION` | `download` | `0.25.8` or `latest` |
+| `PB_FORCE` | `download` re-fetch | `1` |
+
+Copy [`.env.example`](./.env.example) → `.env` for local convenience (gitignored).
+
+---
 
 ## Production hosting notes
 
@@ -125,3 +206,12 @@ Requires optional peer `pocketbase` in the host app, or inject any `PbLike` clie
 - `plan` / `edu_verified` are **not client-writable** (see update rule).
 - Sensor collections require **pro or edu** plan on `@request.auth`.
 - Store device **token hashes** only; samples are immutable (`updateRule: null`).
+
+## TR (kısa)
+
+```bash
+pnpm pb:download && pnpm pb:serve
+# superuser oluştur → PB_ADMIN_* ayarla → pnpm pb:import
+# Web: VITE_POCKETBASE_URL=http://127.0.0.1:8090
+# Docker: cd apps/pocketbase && docker compose up -d
+```

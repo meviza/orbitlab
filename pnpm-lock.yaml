@@ -8,6 +8,12 @@ importers:
 
   .: {}
 
+  apps/pocketbase:
+    dependencies:
+      pocketbase:
+        specifier: ^0.25.0
+        version: 0.25.2
+
   apps/web:
     dependencies:
       '@orbitlab/application':
@@ -16,9 +22,15 @@ importers:
       '@orbitlab/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@orbitlab/infrastructure':
+        specifier: workspace:*
+        version: link:../../packages/infrastructure
       '@orbitlab/sim-core':
         specifier: workspace:*
         version: link:../../packages/sim-core
+      pocketbase:
+        specifier: ^0.25.0
+        version: 0.25.2
       react:
         specifier: ^19.0.0
         version: 19.2.7
@@ -51,12 +63,18 @@ importers:
         specifier: workspace:*
         version: link:../domain
     devDependencies:
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.0
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
 
   packages/domain:
     devDependencies:
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.0
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -1381,8 +1399,7 @@ snapshots:
 
   picomatch@4.0.5: {}
 
-  pocketbase@0.25.2:
-    optional: true
+  pocketbase@0.25.2: {}
 
   postcss@8.5.17:
     dependencies:

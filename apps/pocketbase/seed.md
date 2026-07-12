@@ -4,15 +4,16 @@ Manual seed for local / staging. Do not commit real production passwords.
 
 ## 1. Superuser (ops admin)
 
-On first `./pocketbase serve`, the dashboard prompts for a superuser, or:
+On first `pnpm serve` (or `./bin/pocketbase serve`), the dashboard prompts for a superuser, or from `apps/pocketbase`:
 
 ```bash
-./pocketbase superuser upsert admin@orbitlab.local 'CHANGE_ME_ADMIN_PASSWORD'
+./bin/pocketbase superuser upsert admin@orbitlab.local 'CHANGE_ME_ADMIN_PASSWORD' --dir=./pb_data
 ```
 
 - Email: `admin@orbitlab.local` (or your ops email)
 - Password: long random secret (password manager)
 - Use only for Admin UI + schema import + entitlement fixes
+- Same credentials as `PB_ADMIN_EMAIL` / `PB_ADMIN_PASSWORD` for `pnpm import-schema`
 
 ## 2. Demo end-user (free)
 

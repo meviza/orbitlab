@@ -1,0 +1,43 @@
+# OrbitLab — PocketBase via Docker (alternative to the local binary)
+#
+# Usage (from apps/pocketbase):
+#   docker compose up -d
+#   # Admin UI: http://127.0.0.1:8090/_/
+#
+# Optional superuser bootstrap (muchobien image):
+#   export PB_ADMIN_EMAIL=admin@orbitlab.local
+#   export PB_ADMIN_PASSWORD='change-me'
+#   docker compose up -d
+#
+# Then import schema (host Node, against the container):
+#   export POCKETBASE_URL=http://127.0.0.1:8090
+#   export PB_ADMIN_EMAIL=...
+#   export PB_ADMIN_PASSWORD=...
+#   pnpm import-schema
+#
+# Image: https://github.com/muchobien/pocketbase-docker
+
+services:
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: orbitlab-pocketbase
+    restart: unless-stopped
+    ports:
+      - "${PB_PUBLISH_PORT:-8090}:8090"
+    environment:
+      # Listen inside the container (defaults are usually fine)
+      PB_HOST: "0.0.0.0"
+      PB_PORT: "8090"
+      # Optional first-boot superuser (set via env / .env — do not commit secrets)
+      PB_ADMIN_EMAIL: "${PB_ADMIN_EMAIL:-}"
+      PB_ADMIN_PASSWORD: "${PB_ADMIN_PASSWORD:-}"
+    volumes:
+      # Persist SQLite + file storage next to this compose file
+      - ./pb_data:/pb_data
+    healthcheck:
+      # Image includes wget; hit the public health endpoint
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8090/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

@@ -116,6 +116,8 @@ describe('SimulationRunner / pipeline', () => {
     const free = reg.listByTier('free');
     assert.ok(free.some((m) => m.id === 'flight.toy-vertical'));
     assert.ok(free.some((m) => m.id === 'mass.properties'));
+    assert.ok(free.some((m) => m.id === 'aero.simple-drag'));
+    assert.ok(free.some((m) => m.id === 'stability.margin-lite'));
     assert.equal(reg.listByTier('pro').length, 0);
   });
 

@@ -10,9 +10,15 @@ export type {
   Vec3,
   SimConfig,
   SimSample,
+  ComponentKind,
+  DesignComponent,
   RocketDesignSnapshot,
 } from './types.js';
-export { DEFAULT_SIM_CONFIG } from './types.js';
+export {
+  DEFAULT_SIM_CONFIG,
+  SEA_LEVEL_RHO_KG_M3,
+  STANDARD_G,
+} from './types.js';
 
 // Module contract (Strategy)
 export type {
@@ -54,6 +60,22 @@ export {
   type MassPropertiesData,
 } from './modules/mass-properties.js';
 export {
+  simpleDragModule,
+  computeSimpleDrag,
+  DEFAULT_VELOCITY_SAMPLE_MS,
+  type SimpleDragInput,
+  type SimpleDragData,
+} from './modules/simple-drag.js';
+export {
+  stabilityMarginLiteModule,
+  computeStabilityMarginLite,
+  estimateComponentCp,
+  estimateCgFromComponents,
+  type StabilityMarginLiteInput,
+  type StabilityMarginLiteData,
+  type ComponentCpContribution,
+} from './modules/stability-margin-lite.js';
+export {
   toyVerticalFlightModule,
   simulateToyVertical,
   type ToyVerticalFlightData,
@@ -64,6 +86,7 @@ export {
   createDefaultRegistry,
   createDefaultPipeline,
   DEFAULT_FREE_MODULE_IDS,
+  FULL_FREE_MODULE_IDS,
 } from './factory.js';
 
 // Runner (application facade)
