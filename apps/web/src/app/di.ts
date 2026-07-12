@@ -239,9 +239,48 @@ export function createMemoryContainer(): AppContainer {
 // PocketBase path
 // ---------------------------------------------------------------------------
 
+async function checkPocketBaseHealth(
+  pbUrl: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const base = pbUrl.replace(/\/$/, "");
+  const healthUrl = `${base}/api/health`;
+  try {
+    const res = await fetch(healthUrl, {
+      method: "GET",
+      // health is public; no credentials needed
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        message:
+          `PocketBase health check failed (${res.status}) at ${healthUrl}. ` +
+          `Run: pnpm pb:serve`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      message:
+        `Cannot reach PocketBase at ${base}. ` +
+        `The server is not running or the URL is wrong.\n\n` +
+        `Fix:\n` +
+        `1) cd orbitlab && pnpm pb:download && pnpm pb:serve\n` +
+        `2) Open ${healthUrl} — should return JSON\n` +
+        `3) Or use offline mode: VITE_DATA_BACKEND=memory in apps/web/.env`,
+    };
+  }
+}
+
 export async function createPocketBaseContainer(
   pbUrl: string = DEFAULT_PB_URL
 ): Promise<AppContainer> {
+  const health = await checkPocketBaseHealth(pbUrl);
+  if (!health.ok) {
+    // Fail boot with a clear banner (providers.tsx) instead of a cryptic signup error later
+    throw new Error(health.message);
+  }
+
   let pb;
   try {
     pb = await createPocketBaseClient(pbUrl);
@@ -290,7 +329,7 @@ export async function createPocketBaseContainer(
     simulationRunner,
     ...useCases,
     defaultModuleIds: DEFAULT_FREE_MODULE_IDS,
-    health: { ok: true },
+    health: { ok: true, message: `Connected to ${pbUrl}` },
   };
 }
 
