@@ -43,7 +43,14 @@ export class PocketBaseAuthAdapter implements AuthPort {
       const mapped = mapAuthError(e);
       // Wrong password vs server down: keep unauthorized only for real 400/401
       if (mapped.code === "UNAUTHORIZED" || isCredentialFailure(e)) {
-        return err(DomainError.unauthorized(mapped.message));
+        return err(
+          DomainError.unauthorized(
+            "Invalid login credentials. Use the app user email/password " +
+              "(not a random password). Ensure PocketBase is running " +
+              "(`pnpm pb:serve`) and VITE_DATA_BACKEND=pocketbase. " +
+              "Admin UI (/_/) is a separate superuser login."
+          )
+        );
       }
       return err(mapped);
     }
